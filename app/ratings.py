@@ -4,8 +4,10 @@ Ratings are derived data: any time a match is created, edited or deleted,
 recompute_all() replays every match in chronological order from a clean
 slate. This keeps ratings consistent no matter how history is edited.
 
-Singles uses standard Elo. Doubles treats each pair's average rating as
-the team rating; both partners receive the full team delta.
+Singles uses standard Elo. In doubles, each player's expected score is
+computed from their own rating against the opposing pair's average, so a
+lower-rated partner gains more from a win (and loses less from a defeat)
+than their higher-rated teammate.
 """
 
 import json
@@ -48,12 +50,13 @@ def recompute_all(db):
 
         rating_a = sum(ratings[u] for u in side_a) / len(side_a)
         rating_b = sum(ratings[u] for u in side_b) / len(side_b)
-        score_a = 1.0 if match["winner_side"] == "A" else 0.0
-        delta_a = K_FACTOR * (score_a - expected_score(rating_a, rating_b))
 
         for uid in side_a + side_b:
-            delta = delta_a if uid in side_a else -delta_a
             won = (uid in side_a) == (match["winner_side"] == "A")
+            opponent_avg = rating_b if uid in side_a else rating_a
+            delta = K_FACTOR * (
+                (1.0 if won else 0.0) - expected_score(ratings[uid], opponent_avg)
+            )
             before = ratings[uid]
             ratings[uid] = before + delta
             changes.append((match["id"], uid, before, ratings[uid]))

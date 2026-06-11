@@ -28,13 +28,29 @@ def test_winner_derived_from_games(app, client, auth, players):
     assert get_user(app, "alice")["singles_losses"] == 1
 
 
-def test_doubles_uses_team_average(app, client, auth, players):
+def test_doubles_equal_ratings_split_evenly(app, client, auth, players):
     record_doubles(client, auth, ("alice", "bob"), ("carol", "dan"))
     for name in ("alice", "bob"):
         assert get_user(app, name)["doubles_rating"] == START_RATING + K_FACTOR / 2
         assert get_user(app, name)["doubles_wins"] == 1
     for name in ("carol", "dan"):
         assert get_user(app, name)["doubles_rating"] == START_RATING - K_FACTOR / 2
+
+
+def test_doubles_weights_by_individual_rating(app, client, auth, players):
+    # Lift alice's doubles rating above carol's first.
+    record_doubles(client, auth, ("alice", "bob"), ("carol", "dan"))
+    record_doubles(client, auth, ("alice", "dan"), ("carol", "bob"))
+    alice_before = get_user(app, "alice")["doubles_rating"]
+    carol_before = get_user(app, "carol")["doubles_rating"]
+    assert alice_before > carol_before
+
+    # They win together: the lower-rated partner (carol) should gain more.
+    record_doubles(client, auth, ("alice", "carol"), ("bob", "dan"))
+    alice_gain = get_user(app, "alice")["doubles_rating"] - alice_before
+    carol_gain = get_user(app, "carol")["doubles_rating"] - carol_before
+    assert alice_gain > 0 and carol_gain > 0
+    assert carol_gain > alice_gain
 
 
 def test_edit_recomputes_ratings(app, client, auth, players):

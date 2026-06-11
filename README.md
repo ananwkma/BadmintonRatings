@@ -12,8 +12,9 @@ doubles partner analysis.
   The winner is derived from the game scores. You must be one of the players
   to record a match.
 - **Ratings** — separate Elo ratings for singles and doubles (start 1500,
-  K = 32). Doubles uses the team's average rating; both partners receive the
-  full rating change.
+  K = 32). In doubles each player's update is weighted by their own rating
+  against the opposing pair's average, so a lower-rated partner gains more
+  from a win than their higher-rated teammate.
 - **Editable history** — any participant can edit or delete a match. Ratings
   are always recomputed by replaying every match in chronological order, so
   edits to old matches correctly ripple through everyone's current rating.
@@ -53,7 +54,8 @@ pytest
 
 Ratings are *derived data*. Every create/edit/delete triggers a full replay of
 all matches ordered by date played: everyone starts at 1500 and each match
-applies a standard Elo update (`K * (result − expected)`); for doubles the
-expected score is computed from the two teams' average ratings. Per-match
+applies a standard Elo update (`K * (result − expected)`); for doubles each
+player's expected score is computed from their own rating against the
+opposing pair's average rating. Per-match
 rating changes are stored in `rating_changes` and shown on match pages and
 profiles.
