@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Edit match' if match else 'Record match' }}{% endblock %}
+{% block header %}{{ 'Edit match' if match else 'Record a match' }}{% endblock %}
+
+{% block content %}
+{% set type = request.form.get('match_type') or (match['match_type'] if match else 'singles') %}
+{% set games = match['games'] if match else [] %}
+<form method="post" class="card form" id="match-form">
+  <fieldset class="type-toggle">
+    <legend>Match type</legend>
+    <label><input type="radio" name="match_type" value="singles" {{ 'checked' if type == 'singles' }}> Singles</label>
+    <label><input type="radio" name="match_type" value="doubles" {{ 'checked' if type == 'doubles' }}> Doubles</label>
+  </fieldset>
+
+  <label for="played_at">Date played</label>
+  <input type="date" name="played_at" id="played_at"
+         value="{{ match['played_at'] if match else today }}" required>
+
+  <datalist id="usernames">
+    {% for name in usernames %}<option value="{{ name }}">{% endfor %}
+  </datalist>
+
+  <div class="sides">
+    <fieldset>
+      <legend>Side 1</legend>
+      <input name="side_a_1" list="usernames" placeholder="username" autocomplete="off" required
+             value="{{ request.form.get('side_a_1') or (match['side_a'][0]['username'] if match and match['side_a'] else (g.user['username'] if not match else '')) }}">
+      <input name="side_a_2" list="usernames" placeholder="partner username" autocomplete="off" class="doubles-only"
+             value="{{ request.form.get('side_a_2') or (match['side_a'][1]['username'] if match and match['side_a']|length > 1 else '') }}">
+    </fieldset>
+    <fieldset>
+      <legend>Side 2</legend>
+      <input name="side_b_1" list="usernames" placeholder="username" autocomplete="off" required
+             value="{{ request.form.get('side_b_1') or (match['side_b'][0]['username'] if match and match['side_b'] else '') }}">
+      <input name="side_b_2" list="usernames" placeholder="partner username" autocomplete="off" class="doubles-only"
+             value="{{ request.form.get('side_b_2') or (match['side_b'][1]['username'] if match and match['side_b']|length > 1 else '') }}">
+    </fieldset>
+  </div>
+
+  <fieldset>
+    <legend>Game scores <span class="muted">(side 1 – side 2; leave unused games blank)</span></legend>
+    {% for i in (1, 2, 3) %}
+    <div class="game-score">
+      <span>Game {{ i }}</span>
+      <input name="game{{ i }}_a" inputmode="numeric" size="3"
+             value="{{ request.form.get('game' ~ i ~ '_a') or (games[i-1][0] if games|length >= i else '') }}">
+      <span>–</span>
+      <input name="game{{ i }}_b" inputmode="numeric" size="3"
+             value="{{ request.form.get('game' ~ i ~ '_b') or (games[i-1][1] if games|length >= i else '') }}">
+    </div>
+    {% endfor %}
+  </fieldset>
+
+  <button type="submit">{{ 'Save changes' if match else 'Record match' }}</button>
+  <p class="muted">The winner is worked out from the game scores. Ratings update automatically{{ ', and editing recalculates everyone’s ratings' if match }}.</p>
+</form>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% endblock %}

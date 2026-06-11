@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{% endblock %} · Badminton Ratings</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<nav>
+  <a class="brand" href="{{ url_for('index') }}">🏸 Badminton Ratings</a>
+  <div class="nav-links">
+    <a href="{{ url_for('players.leaderboard') }}">Leaderboard</a>
+    <a href="{{ url_for('players.search') }}">Players</a>
+    {% if g.user %}
+      <a class="button" href="{{ url_for('matches.create') }}">Record match</a>
+      <a href="{{ url_for('players.profile', username=g.user['username']) }}">{{ g.user['display_name'] }}</a>
+      <a href="{{ url_for('auth.logout') }}">Log out</a>
+    {% else %}
+      <a href="{{ url_for('auth.login') }}">Log in</a>
+      <a class="button" href="{{ url_for('auth.register') }}">Sign up</a>
+    {% endif %}
+  </div>
+</nav>
+<main>
+  {% for message in get_flashed_messages() %}
+    <div class="flash">{{ message }}</div>
+  {% endfor %}
+  <header class="page-header"><h1>{% block header %}{% endblock %}</h1></header>
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

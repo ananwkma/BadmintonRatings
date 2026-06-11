@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% from '_match_row.html' import side_names %}
+
+{% block title %}Match #{{ match['id'] }}{% endblock %}
+{% block header %}{{ match['match_type']|capitalize }} match · {{ match['played_at'] }}{% endblock %}
+
+{% block content %}
+{% set winners = match['side_a'] if match['winner_side'] == 'A' else match['side_b'] %}
+{% set losers = match['side_b'] if match['winner_side'] == 'A' else match['side_a'] %}
+<div class="card">
+  <p class="match-headline">
+    <span class="winner">{{ side_names(winners) }}</span>
+    <span class="vs">defeated</span>
+    {{ side_names(losers) }}
+  </p>
+  <table class="score-table">
+    <thead><tr><th></th>{% for game in match['games'] %}<th>Game {{ loop.index }}</th>{% endfor %}</tr></thead>
+    <tbody>
+      <tr><td>{{ side_names(match['side_a']) }}</td>
+        {% for game in match['games'] %}<td class="{{ 'won' if game[0] > game[1] }}">{{ game[0] }}</td>{% endfor %}</tr>
+      <tr><td>{{ side_names(match['side_b']) }}</td>
+        {% for game in match['games'] %}<td class="{{ 'won' if game[1] > game[0] }}">{{ game[1] }}</td>{% endfor %}</tr>
+    </tbody>
+  </table>
+
+  <h3>Rating changes</h3>
+  <ul class="delta-list">
+    {% for p in match['side_a'] + match['side_b'] %}
+      {% set delta = match['deltas'].get(p['user_id'], 0) %}
+      <li>
+        <a href="{{ url_for('players.profile', username=p['username']) }}">{{ p['display_name'] }}</a>
+        <span class="delta {{ 'pos' if delta >= 0 else 'neg' }}">{{ '%+.1f'|format(delta) }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+
+  {% if match['updated_at'] %}<p class="muted">Edited {{ match['updated_at'] }} UTC</p>{% endif %}
+
+  {% if can_edit %}
+  <div class="actions">
+    <a class="button" href="{{ url_for('matches.edit', match_id=match['id']) }}">Edit match</a>
+    <form method="post" action="{{ url_for('matches.delete', match_id=match['id']) }}"
+          onsubmit="return confirm('Delete this match? Ratings will be recalculated.')">
+      <button class="danger" type="submit">Delete</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

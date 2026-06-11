@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% from '_match_row.html' import match_row %}
+
+{% block title %}Recent matches{% endblock %}
+{% block header %}Recent matches{% endblock %}
+
+{% block content %}
+  {% if matches %}
+    <div class="match-list">
+      {% for match in matches %}{{ match_row(match) }}{% endfor %}
+    </div>
+  {% else %}
+    <p class="empty">No matches recorded yet.
+      {% if g.user %}<a href="{{ url_for('matches.create') }}">Record the first one!</a>
+      {% else %}<a href="{{ url_for('auth.register') }}">Sign up</a> to record the first one.{% endif %}
+    </p>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Leaderboard{% endblock %}
+{% block header %}Leaderboard{% endblock %}
+
+{% macro board(users, kind) %}
+<div class="card board">
+  <h2>{{ kind|capitalize }}</h2>
+  {% if users %}
+  <table>
+    <thead><tr><th>#</th><th>Player</th><th>Rating</th><th>W–L</th></tr></thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td><a href="{{ url_for('players.profile', username=u['username']) }}">{{ u['display_name'] }}</a>
+            <span class="muted">@{{ u['username'] }}</span></td>
+        <td class="rating">{{ u[kind ~ '_rating']|round|int }}</td>
+        <td>{{ u[kind ~ '_wins'] }}–{{ u[kind ~ '_losses'] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No {{ kind }} matches recorded yet.</p>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{% block content %}
+<div class="boards">
+  {{ board(singles, 'singles') }}
+  {{ board(doubles, 'doubles') }}
+</div>
+{% endblock %}

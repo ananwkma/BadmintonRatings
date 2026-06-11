@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Find players{% endblock %}
+{% block header %}Find players{% endblock %}
+
+{% block content %}
+<form method="get" class="search-form">
+  <input name="q" value="{{ query }}" placeholder="Search by name or username" autofocus>
+  <button type="submit">Search</button>
+</form>
+
+{% if results is not none %}
+  {% if results %}
+  <div class="card">
+    <table>
+      <thead><tr><th>Player</th><th>Singles</th><th>Doubles</th></tr></thead>
+      <tbody>
+        {% for u in results %}
+        <tr>
+          <td><a href="{{ url_for('players.profile', username=u['username']) }}">{{ u['display_name'] }}</a>
+              <span class="muted">@{{ u['username'] }}</span></td>
+          <td>{{ u['singles_rating']|round|int }} <span class="muted">({{ u['singles_wins'] }}–{{ u['singles_losses'] }})</span></td>
+          <td>{{ u['doubles_rating']|round|int }} <span class="muted">({{ u['doubles_wins'] }}–{{ u['doubles_losses'] }})</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty">No players match “{{ query }}”.</p>
+  {% endif %}
+{% endif %}
+{% endblock %}
