@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin{% endblock %}
+{% block header %}Admin dashboard{% endblock %}
+
+{% block content %}
+<div class="boards">
+  <div class="card">
+    <h2>Players</h2>
+    <form method="post" action="{{ url_for('admin.add_player') }}" class="search-form">
+      <input name="name" placeholder="New player name" required>
+      <button type="submit">Add player</button>
+    </form>
+    {% if players %}
+    <table>
+      <thead><tr><th>Name</th><th>Matches</th><th></th></tr></thead>
+      <tbody>
+        {% for p in players %}
+        <tr>
+          <td><a href="{{ url_for('players.profile', player_id=p['id']) }}">{{ p['name'] }}</a></td>
+          <td>{{ p['match_count'] }}</td>
+          <td>
+            {% if p['match_count'] == 0 %}
+            <form method="post" action="{{ url_for('admin.delete_player', player_id=p['id']) }}"
+                  onsubmit="return confirm('Remove {{ p['name'] }}?')" class="inline-form">
+              <button class="danger small" type="submit">Remove</button>
+            </form>
+            {% else %}
+            <span class="muted">has matches</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">No players yet — add some names above.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Groups</h2>
+    <form method="post" action="{{ url_for('admin.create_group') }}" class="form">
+      <input name="name" placeholder="New group name" required>
+      <input type="password" name="password" placeholder="Group password (min 6 chars)" required minlength="6">
+      <button type="submit">Create group</button>
+    </form>
+    {% if groups %}
+    <table>
+      <thead><tr><th>Group</th><th>Members</th><th>Matches</th></tr></thead>
+      <tbody>
+        {% for grp in groups %}
+        <tr>
+          <td><a href="{{ url_for('admin.manage_group', group_id=grp['id']) }}">{{ grp['name'] }}</a></td>
+          <td>{{ grp['member_count'] }}</td>
+          <td>{{ grp['match_count'] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">No groups yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

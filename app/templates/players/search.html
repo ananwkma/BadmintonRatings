@@ -5,7 +5,7 @@
 
 {% block content %}
 <form method="get" class="search-form">
-  <input name="q" value="{{ query }}" placeholder="Search by name or username" autofocus>
+  <input name="q" value="{{ query }}" placeholder="Search by name" autofocus>
   <button type="submit">Search</button>
 </form>
 
@@ -15,12 +15,11 @@
     <table>
       <thead><tr><th>Player</th><th>Singles</th><th>Doubles</th></tr></thead>
       <tbody>
-        {% for u in results %}
+        {% for p in results %}
         <tr>
-          <td><a href="{{ url_for('players.profile', username=u['username']) }}">{{ u['display_name'] }}</a>
-              <span class="muted">@{{ u['username'] }}</span></td>
-          <td>{{ u['singles_rating']|round|int }} <span class="muted">({{ u['singles_wins'] }}–{{ u['singles_losses'] }})</span></td>
-          <td>{{ u['doubles_rating']|round|int }} <span class="muted">({{ u['doubles_wins'] }}–{{ u['doubles_losses'] }})</span></td>
+          <td><a href="{{ url_for('players.profile', player_id=p['id']) }}">{{ p['name'] }}</a></td>
+          <td>{{ p['singles_rating']|round|int }} <span class="muted">({{ p['singles_wins'] }}–{{ p['singles_losses'] }})</span></td>
+          <td>{{ p['doubles_rating']|round|int }} <span class="muted">({{ p['doubles_wins'] }}–{{ p['doubles_losses'] }})</span></td>
         </tr>
         {% endfor %}
       </tbody>

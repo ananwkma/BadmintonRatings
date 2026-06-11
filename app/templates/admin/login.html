@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin{% endblock %}
+{% block header %}{{ 'Set the admin password' if first_run else 'Admin login' }}{% endblock %}
+
+{% block content %}
+<form method="post" class="card form">
+  {% if first_run %}
+    <p>No admin password has been set yet. Choose one now — whoever holds this
+       password manages the player roster and groups.</p>
+    <label for="password">Admin password</label>
+    <input type="password" name="password" id="password" required minlength="6">
+    <label for="confirm">Confirm password</label>
+    <input type="password" name="confirm" id="confirm" required minlength="6">
+    <button type="submit">Set password &amp; log in</button>
+  {% else %}
+    <label for="password">Admin password</label>
+    <input type="password" name="password" id="password" required autofocus>
+    <button type="submit">Log in</button>
+  {% endif %}
+</form>
+{% endblock %}

@@ -10,15 +10,16 @@
 <nav>
   <a class="brand" href="{{ url_for('index') }}">🏸 Badminton Ratings</a>
   <div class="nav-links">
+    <a href="{{ url_for('groups.index') }}">Groups</a>
     <a href="{{ url_for('players.leaderboard') }}">Leaderboard</a>
     <a href="{{ url_for('players.search') }}">Players</a>
-    {% if g.user %}
-      <a class="button" href="{{ url_for('matches.create') }}">Record match</a>
-      <a href="{{ url_for('players.profile', username=g.user['username']) }}">{{ g.user['display_name'] }}</a>
-      <a href="{{ url_for('auth.logout') }}">Log out</a>
+    {% if is_admin() %}
+      <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+      <form method="post" action="{{ url_for('admin.logout') }}" class="inline-form">
+        <button class="linklike" type="submit">Log out</button>
+      </form>
     {% else %}
-      <a href="{{ url_for('auth.login') }}">Log in</a>
-      <a class="button" href="{{ url_for('auth.register') }}">Sign up</a>
+      <a href="{{ url_for('admin.login') }}">Admin</a>
     {% endif %}
   </div>
 </nav>

@@ -12,11 +12,11 @@ MIN_PARTNER_MATCHES = 2  # matches together before a pairing is ranked "best"
 def leaderboard():
     db = get_db()
     singles = db.execute(
-        "SELECT * FROM users WHERE singles_wins + singles_losses > 0"
+        "SELECT * FROM players WHERE singles_wins + singles_losses > 0"
         " ORDER BY singles_rating DESC, singles_wins DESC LIMIT 50"
     ).fetchall()
     doubles = db.execute(
-        "SELECT * FROM users WHERE doubles_wins + doubles_losses > 0"
+        "SELECT * FROM players WHERE doubles_wins + doubles_losses > 0"
         " ORDER BY doubles_rating DESC, doubles_wins DESC LIMIT 50"
     ).fetchall()
     return render_template(
@@ -30,38 +30,35 @@ def search():
     query = request.args.get("q", "").strip()
     results = None
     if query:
-        like = f"%{query}%"
         results = db.execute(
-            "SELECT * FROM users WHERE username LIKE ? OR display_name LIKE ?"
-            " ORDER BY display_name LIMIT 50",
-            (like, like),
+            "SELECT * FROM players WHERE name LIKE ? ORDER BY name LIMIT 50",
+            (f"%{query}%",),
         ).fetchall()
     return render_template("players/search.html", query=query, results=results)
 
 
-def partner_stats(db, user_id):
+def partner_stats(db, player_id):
     """Aggregate doubles results by partner: matches, wins, win % and the
     net doubles-rating change earned while playing together."""
     rows = db.execute(
         "SELECT m.id, m.winner_side, mine.side,"
-        "       u.id AS partner_id, u.username, u.display_name,"
+        "       p.id AS partner_id, p.name,"
         "       rc.rating_after - rc.rating_before AS delta"
         " FROM matches m"
-        " JOIN match_players mine ON mine.match_id = m.id AND mine.user_id = ?"
+        " JOIN match_players mine ON mine.match_id = m.id AND mine.player_id = ?"
         " JOIN match_players partner ON partner.match_id = m.id"
-        "      AND partner.side = mine.side AND partner.user_id != ?"
-        " JOIN users u ON u.id = partner.user_id"
-        " LEFT JOIN rating_changes rc ON rc.match_id = m.id AND rc.user_id = ?"
+        "      AND partner.side = mine.side AND partner.player_id != ?"
+        " JOIN players p ON p.id = partner.player_id"
+        " LEFT JOIN rating_changes rc ON rc.match_id = m.id AND rc.player_id = ?"
         " WHERE m.match_type = 'doubles'"
         " ORDER BY m.played_at, m.id",
-        (user_id, user_id, user_id),
+        (player_id, player_id, player_id),
     ).fetchall()
 
     stats = {}
     for row in rows:
         s = stats.setdefault(row["partner_id"], {
-            "username": row["username"],
-            "display_name": row["display_name"],
+            "partner_id": row["partner_id"], "name": row["name"],
             "matches": 0, "wins": 0, "net_delta": 0.0,
         })
         s["matches"] += 1
@@ -84,18 +81,24 @@ def partner_stats(db, user_id):
     return partners, best
 
 
-@bp.route("/players/<username>")
-def profile(username):
+@bp.route("/players/<int:player_id>")
+def profile(player_id):
     db = get_db()
-    user = db.execute(
-        "SELECT * FROM users WHERE username = ?", (username,)
+    player = db.execute(
+        "SELECT * FROM players WHERE id = ?", (player_id,)
     ).fetchone()
-    if user is None:
+    if player is None:
         abort(404, "Player not found.")
 
-    matches = fetch_matches(db, user_id=user["id"])
-    partners, best_partner = partner_stats(db, user["id"])
+    groups = db.execute(
+        "SELECT g.id, g.name FROM groups g"
+        " JOIN group_players gp ON gp.group_id = g.id"
+        " WHERE gp.player_id = ? ORDER BY g.name",
+        (player_id,),
+    ).fetchall()
+    matches = fetch_matches(db, player_id=player_id)
+    partners, best_partner = partner_stats(db, player_id)
     return render_template(
-        "players/profile.html", player=user, matches=matches,
+        "players/profile.html", player=player, groups=groups, matches=matches,
         partners=partners, best_partner=best_partner,
     )

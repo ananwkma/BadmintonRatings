@@ -22,7 +22,7 @@ def expected_score(own, opponent):
 
 
 def recompute_all(db):
-    """Replay all matches and rebuild user ratings, win/loss records and
+    """Replay all matches and rebuild player ratings, win/loss records and
     per-match rating_changes rows. Does not commit."""
     singles = defaultdict(lambda: START_RATING)
     doubles = defaultdict(lambda: START_RATING)
@@ -33,57 +33,57 @@ def recompute_all(db):
     matches = db.execute(
         "SELECT id, match_type, winner_side FROM matches ORDER BY played_at, id"
     ).fetchall()
-    players = db.execute(
-        "SELECT match_id, user_id, side FROM match_players"
+    participants = db.execute(
+        "SELECT match_id, player_id, side FROM match_players"
     ).fetchall()
     by_match = defaultdict(list)
-    for p in players:
+    for p in participants:
         by_match[p["match_id"]].append(p)
 
     changes = []
     for match in matches:
         ratings = singles if match["match_type"] == "singles" else doubles
-        side_a = [p["user_id"] for p in by_match[match["id"]] if p["side"] == "A"]
-        side_b = [p["user_id"] for p in by_match[match["id"]] if p["side"] == "B"]
+        side_a = [p["player_id"] for p in by_match[match["id"]] if p["side"] == "A"]
+        side_b = [p["player_id"] for p in by_match[match["id"]] if p["side"] == "B"]
         if not side_a or not side_b:
             continue
 
-        rating_a = sum(ratings[u] for u in side_a) / len(side_a)
-        rating_b = sum(ratings[u] for u in side_b) / len(side_b)
+        rating_a = sum(ratings[p] for p in side_a) / len(side_a)
+        rating_b = sum(ratings[p] for p in side_b) / len(side_b)
 
-        for uid in side_a + side_b:
-            won = (uid in side_a) == (match["winner_side"] == "A")
-            opponent_avg = rating_b if uid in side_a else rating_a
+        for pid in side_a + side_b:
+            won = (pid in side_a) == (match["winner_side"] == "A")
+            opponent_avg = rating_b if pid in side_a else rating_a
             delta = K_FACTOR * (
-                (1.0 if won else 0.0) - expected_score(ratings[uid], opponent_avg)
+                (1.0 if won else 0.0) - expected_score(ratings[pid], opponent_avg)
             )
-            before = ratings[uid]
-            ratings[uid] = before + delta
-            changes.append((match["id"], uid, before, ratings[uid]))
-            rec = records[uid]
+            before = ratings[pid]
+            ratings[pid] = before + delta
+            changes.append((match["id"], pid, before, ratings[pid]))
+            rec = records[pid]
             if match["match_type"] == "singles":
                 rec[0 if won else 1] += 1
             else:
                 rec[2 if won else 3] += 1
 
     db.executemany(
-        "INSERT INTO rating_changes (match_id, user_id, rating_before, rating_after)"
+        "INSERT INTO rating_changes (match_id, player_id, rating_before, rating_after)"
         " VALUES (?, ?, ?, ?)",
         changes,
     )
 
     db.execute(
-        "UPDATE users SET singles_rating = ?, doubles_rating = ?,"
+        "UPDATE players SET singles_rating = ?, doubles_rating = ?,"
         " singles_wins = 0, singles_losses = 0, doubles_wins = 0, doubles_losses = 0",
         (START_RATING, START_RATING),
     )
-    for uid in set(singles) | set(doubles):
-        rec = records[uid]
+    for pid in set(singles) | set(doubles):
+        rec = records[pid]
         db.execute(
-            "UPDATE users SET singles_rating = ?, doubles_rating = ?,"
+            "UPDATE players SET singles_rating = ?, doubles_rating = ?,"
             " singles_wins = ?, singles_losses = ?, doubles_wins = ?, doubles_losses = ?"
             " WHERE id = ?",
-            (singles[uid], doubles[uid], rec[0], rec[1], rec[2], rec[3], uid),
+            (singles[pid], doubles[pid], rec[0], rec[1], rec[2], rec[3], pid),
         )
 
 

@@ -10,9 +10,8 @@
       {% for match in matches %}{{ match_row(match) }}{% endfor %}
     </div>
   {% else %}
-    <p class="empty">No matches recorded yet.
-      {% if g.user %}<a href="{{ url_for('matches.create') }}">Record the first one!</a>
-      {% else %}<a href="{{ url_for('auth.register') }}">Sign up</a> to record the first one.{% endif %}
-    </p>
+    <p class="empty">No matches recorded yet. Pick a group on the
+      <a href="{{ url_for('groups.index') }}">groups page</a> and unlock it with
+      its password to record matches.</p>
   {% endif %}
 {% endblock %}

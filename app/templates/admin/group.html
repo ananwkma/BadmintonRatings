@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage {{ group['name'] }}{% endblock %}
+{% block header %}Manage group · {{ group['name'] }}{% endblock %}
+
+{% block content %}
+<p><a href="{{ url_for('groups.detail', group_id=group['id']) }}">View public group page</a>
+   · <a href="{{ url_for('admin.dashboard') }}">Back to dashboard</a></p>
+
+<div class="boards">
+  <div class="card">
+    <h2>Members</h2>
+    {% if members %}
+    <table>
+      <tbody>
+        {% for p in members %}
+        <tr>
+          <td><a href="{{ url_for('players.profile', player_id=p['id']) }}">{{ p['name'] }}</a></td>
+          <td>
+            <form method="post" class="inline-form"
+                  onsubmit="return confirm('Remove {{ p['name'] }} from {{ group['name'] }}?')">
+              <input type="hidden" name="action" value="remove_member">
+              <input type="hidden" name="player_id" value="{{ p['id'] }}">
+              <button class="danger small" type="submit">Remove</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">No members yet.</p>
+    {% endif %}
+
+    {% if non_members %}
+    <form method="post" class="search-form">
+      <input type="hidden" name="action" value="add_member">
+      <select name="player_id" required>
+        <option value="" disabled selected>Add a player…</option>
+        {% for p in non_members %}<option value="{{ p['id'] }}">{{ p['name'] }}</option>{% endfor %}
+      </select>
+      <button type="submit">Add to group</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Group password</h2>
+    <form method="post" class="form">
+      <input type="hidden" name="action" value="reset_password">
+      <input type="password" name="password" placeholder="New group password" required minlength="6">
+      <button type="submit">Reset password</button>
+    </form>
+
+    <h2>Danger zone</h2>
+    <form method="post"
+          onsubmit="return confirm('Delete {{ group['name'] }} and ALL of its matches? Ratings will be recalculated.')">
+      <input type="hidden" name="action" value="delete_group">
+      <button class="danger" type="submit">Delete group and its matches</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

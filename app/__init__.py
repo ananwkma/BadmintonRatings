@@ -20,11 +20,15 @@ def create_app(test_config=None):
     with app.app_context():
         db.init_db_if_needed()
 
-    from . import auth, matches, players
+    from . import admin, auth, groups, matches, players
 
-    app.register_blueprint(auth.bp)
+    app.register_blueprint(admin.bp)
+    app.register_blueprint(groups.bp)
     app.register_blueprint(matches.bp)
     app.register_blueprint(players.bp)
     app.add_url_rule("/", endpoint="index")
+
+    app.jinja_env.globals["is_admin"] = auth.is_admin
+    app.jinja_env.globals["is_unlocked"] = auth.is_unlocked
 
     return app

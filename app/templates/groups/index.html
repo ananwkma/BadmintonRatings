@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Groups{% endblock %}
+{% block header %}Groups{% endblock %}
+
+{% block content %}
+{% if groups %}
+<div class="card">
+  <table>
+    <thead><tr><th>Group</th><th>Members</th><th>Matches</th><th></th></tr></thead>
+    <tbody>
+      {% for grp in groups %}
+      <tr>
+        <td><a href="{{ url_for('groups.detail', group_id=grp['id']) }}">{{ grp['name'] }}</a></td>
+        <td>{{ grp['member_count'] }}</td>
+        <td>{{ grp['match_count'] }}</td>
+        <td>{{ '🔓 unlocked' if is_unlocked(grp['id']) else '🔒' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty">No groups yet. The admin can create groups from the
+  <a href="{{ url_for('admin.login') }}">admin dashboard</a>.</p>
+{% endif %}
+{% endblock %}

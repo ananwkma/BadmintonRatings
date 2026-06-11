@@ -55,6 +55,16 @@ a { color: var(--accent); }
 }
 .button:hover, button:hover { background: var(--accent-dark); }
 button.danger { background: var(--danger); }
+button.small { padding: 0.2rem 0.55rem; font-size: 0.8rem; }
+button.linklike {
+  background: none !important;
+  color: var(--ink) !important;
+  padding: 0;
+  font-size: inherit;
+  cursor: pointer;
+}
+button.linklike:hover { color: var(--accent) !important; }
+.inline-form { display: inline; margin: 0; }
 
 .card {
   background: var(--card);
@@ -79,6 +89,7 @@ button.danger { background: var(--danger); }
 /* forms */
 .form { display: flex; flex-direction: column; gap: 0.5rem; max-width: 480px; }
 .form label { font-weight: 600; margin-top: 0.5rem; }
+.form select, .search-form select,
 .form input, .search-form input {
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--border);

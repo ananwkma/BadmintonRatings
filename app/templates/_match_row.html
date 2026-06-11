@@ -1,11 +1,11 @@
 {% macro side_names(side) -%}
   {%- for p in side -%}
-    <a href="{{ url_for('players.profile', username=p['username']) }}">{{ p['display_name'] }}</a>
+    <a href="{{ url_for('players.profile', player_id=p['player_id']) }}">{{ p['name'] }}</a>
     {%- if not loop.last %} &amp; {% endif -%}
   {%- endfor -%}
 {%- endmacro %}
 
-{% macro match_row(match) %}
+{% macro match_row(match, show_group=True) %}
 {% set winners = match['side_a'] if match['winner_side'] == 'A' else match['side_b'] %}
 {% set losers = match['side_b'] if match['winner_side'] == 'A' else match['side_a'] %}
 <div class="match-row">
@@ -18,6 +18,9 @@
     <span class="vs">def.</span>
     <span>{{ side_names(losers) }}</span>
     <span class="score">{{ match['score_display'] }}</span>
+    {% if show_group %}
+      <span class="muted">· <a href="{{ url_for('groups.detail', group_id=match['group_id']) }}">{{ match['group_name'] }}</a></span>
+    {% endif %}
   </div>
   <a class="detail-link" href="{{ url_for('matches.detail', match_id=match['id']) }}">details</a>
 </div>

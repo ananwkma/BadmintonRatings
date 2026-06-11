@@ -30,7 +30,7 @@ def init_db():
 def init_db_if_needed():
     db = get_db()
     row = db.execute(
-        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'users'"
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'players'"
     ).fetchone()
     if row is None:
         init_db()

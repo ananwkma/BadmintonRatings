@@ -1,11 +1,23 @@
 {% extends 'base.html' %}
 
 {% block title %}{{ 'Edit match' if match else 'Record match' }}{% endblock %}
-{% block header %}{{ 'Edit match' if match else 'Record a match' }}{% endblock %}
+{% block header %}{{ 'Edit match' if match else 'Record a match' }} <span class="muted">· {{ group['name'] }}</span>{% endblock %}
 
 {% block content %}
 {% set type = request.form.get('match_type') or (match['match_type'] if match else 'singles') %}
 {% set games = match['games'] if match else [] %}
+
+{% macro player_select(field, side, slot, required=True) %}
+  {% set current = request.form.get(field, type=none) or
+       (match[side][slot - 1]['player_id'] if match and match[side]|length >= slot else none) %}
+  <select name="{{ field }}" {{ 'required' if required }} class="{{ 'doubles-only' if slot == 2 }}">
+    <option value="">— select player —</option>
+    {% for p in members %}
+    <option value="{{ p['id'] }}" {{ 'selected' if current|string == p['id']|string }}>{{ p['name'] }}</option>
+    {% endfor %}
+  </select>
+{% endmacro %}
+
 <form method="post" class="card form" id="match-form">
   <fieldset class="type-toggle">
     <legend>Match type</legend>
@@ -17,24 +29,16 @@
   <input type="date" name="played_at" id="played_at"
          value="{{ match['played_at'] if match else today }}" required>
 
-  <datalist id="usernames">
-    {% for name in usernames %}<option value="{{ name }}">{% endfor %}
-  </datalist>
-
   <div class="sides">
     <fieldset>
       <legend>Side 1</legend>
-      <input name="side_a_1" list="usernames" placeholder="username" autocomplete="off" required
-             value="{{ request.form.get('side_a_1') or (match['side_a'][0]['username'] if match and match['side_a'] else (g.user['username'] if not match else '')) }}">
-      <input name="side_a_2" list="usernames" placeholder="partner username" autocomplete="off" class="doubles-only"
-             value="{{ request.form.get('side_a_2') or (match['side_a'][1]['username'] if match and match['side_a']|length > 1 else '') }}">
+      {{ player_select('side_a_1', 'side_a', 1) }}
+      {{ player_select('side_a_2', 'side_a', 2, required=False) }}
     </fieldset>
     <fieldset>
       <legend>Side 2</legend>
-      <input name="side_b_1" list="usernames" placeholder="username" autocomplete="off" required
-             value="{{ request.form.get('side_b_1') or (match['side_b'][0]['username'] if match and match['side_b'] else '') }}">
-      <input name="side_b_2" list="usernames" placeholder="partner username" autocomplete="off" class="doubles-only"
-             value="{{ request.form.get('side_b_2') or (match['side_b'][1]['username'] if match and match['side_b']|length > 1 else '') }}">
+      {{ player_select('side_b_1', 'side_b', 1) }}
+      {{ player_select('side_b_2', 'side_b', 2, required=False) }}
     </fieldset>
   </div>
 
@@ -53,7 +57,8 @@
   </fieldset>
 
   <button type="submit">{{ 'Save changes' if match else 'Record match' }}</button>
-  <p class="muted">The winner is worked out from the game scores. Ratings update automatically{{ ', and editing recalculates everyone’s ratings' if match }}.</p>
+  <p class="muted">Players come from this group's member list. The winner is
+     worked out from the game scores, and ratings update automatically{{ ' — editing recalculates everyone’s ratings' if match }}.</p>
 </form>
 <script src="{{ url_for('static', filename='app.js') }}"></script>
 {% endblock %}

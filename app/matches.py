@@ -2,29 +2,33 @@ import json
 from datetime import date
 
 from flask import (
-    Blueprint, abort, flash, g, redirect, render_template, request, url_for
+    Blueprint, abort, flash, redirect, render_template, request, url_for
 )
 
 from . import ratings
-from .auth import login_required
+from .auth import require_unlocked
 from .db import get_db
 
 bp = Blueprint("matches", __name__)
 
 
-def fetch_matches(db, user_id=None, limit=None):
-    """Return matches (newest first) as dicts with players grouped by side
-    and the viewer-relevant rating deltas attached."""
+def fetch_matches(db, player_id=None, group_id=None, limit=None):
+    """Return matches (newest first) as dicts with players grouped by side,
+    the group name, and per-player rating deltas attached."""
     sql = (
-        "SELECT m.* FROM matches m"
-        " {join} ORDER BY m.played_at DESC, m.id DESC {limit}"
+        "SELECT m.*, g.name AS group_name FROM matches m"
+        " JOIN groups g ON g.id = m.group_id"
+        " {join} {where} ORDER BY m.played_at DESC, m.id DESC {limit}"
     )
     params = []
-    join = ""
-    if user_id is not None:
-        join = "JOIN match_players f ON f.match_id = m.id AND f.user_id = ?"
-        params.append(user_id)
-    sql = sql.format(join=join, limit="LIMIT ?" if limit else "")
+    join = where = ""
+    if player_id is not None:
+        join = "JOIN match_players f ON f.match_id = m.id AND f.player_id = ?"
+        params.append(player_id)
+    if group_id is not None:
+        where = "WHERE m.group_id = ?"
+        params.append(group_id)
+    sql = sql.format(join=join, where=where, limit="LIMIT ?" if limit else "")
     if limit:
         params.append(limit)
     rows = db.execute(sql, params).fetchall()
@@ -33,15 +37,14 @@ def fetch_matches(db, user_id=None, limit=None):
 
     ids = [r["id"] for r in rows]
     marks = ",".join("?" * len(ids))
-    players = db.execute(
-        f"SELECT mp.match_id, mp.side, mp.position, u.id AS user_id,"
-        f" u.username, u.display_name"
-        f" FROM match_players mp JOIN users u ON u.id = mp.user_id"
+    participants = db.execute(
+        f"SELECT mp.match_id, mp.side, mp.position, p.id AS player_id, p.name"
+        f" FROM match_players mp JOIN players p ON p.id = mp.player_id"
         f" WHERE mp.match_id IN ({marks}) ORDER BY mp.side, mp.position",
         ids,
     ).fetchall()
     deltas = db.execute(
-        f"SELECT match_id, user_id, rating_before, rating_after"
+        f"SELECT match_id, player_id, rating_before, rating_after"
         f" FROM rating_changes WHERE match_id IN ({marks})",
         ids,
     ).fetchall()
@@ -49,14 +52,14 @@ def fetch_matches(db, user_id=None, limit=None):
     result = []
     for r in rows:
         match = dict(r)
-        match["side_a"] = [dict(p) for p in players
+        match["side_a"] = [dict(p) for p in participants
                            if p["match_id"] == r["id"] and p["side"] == "A"]
-        match["side_b"] = [dict(p) for p in players
+        match["side_b"] = [dict(p) for p in participants
                            if p["match_id"] == r["id"] and p["side"] == "B"]
         match["games"] = json.loads(r["scores"])
         match["score_display"] = ratings.format_scores(r["scores"])
         match["deltas"] = {
-            d["user_id"]: d["rating_after"] - d["rating_before"]
+            d["player_id"]: d["rating_after"] - d["rating_before"]
             for d in deltas if d["match_id"] == r["id"]
         }
         result.append(match)
@@ -68,13 +71,6 @@ def get_match(match_id):
     if not matches:
         abort(404, "Match not found.")
     return matches[0]
-
-
-def is_participant(match, user):
-    if user is None:
-        return False
-    return any(p["user_id"] == user["id"]
-               for p in match["side_a"] + match["side_b"])
 
 
 def parse_games(form):
@@ -102,33 +98,41 @@ def parse_games(form):
     return games, ("A" if wins_a > wins_b else "B")
 
 
-def resolve_players(form, match_type, db):
-    """Look up the usernames in the form, returning [(user_id, side, position)]."""
+def resolve_players(form, match_type, db, group_id):
+    """Validate the selected player ids, returning [(player_id, side, position)].
+    All players must be members of the group."""
     slots = [("side_a_1", "A", 1), ("side_b_1", "B", 1)]
     if match_type == "doubles":
         slots += [("side_a_2", "A", 2), ("side_b_2", "B", 2)]
 
-    players = []
+    selected = []
     seen = set()
     for field, side, position in slots:
-        username = form.get(field, "").strip()
-        if not username:
+        player_id = form.get(field, type=int)
+        if not player_id:
             raise ValueError("All player slots must be filled in.")
-        user = db.execute(
-            "SELECT id FROM users WHERE username = ?", (username,)
+        member = db.execute(
+            "SELECT p.name FROM players p"
+            " JOIN group_players gp ON gp.player_id = p.id"
+            " WHERE p.id = ? AND gp.group_id = ?",
+            (player_id, group_id),
         ).fetchone()
-        if user is None:
-            raise ValueError(f"No player named “{username}”. Players need an account first.")
-        if user["id"] in seen:
-            raise ValueError(f"{username} can only appear once in a match.")
-        seen.add(user["id"])
-        players.append((user["id"], side, position))
-    return players
+        if member is None:
+            raise ValueError("All players must be members of this group.")
+        if player_id in seen:
+            raise ValueError(f"{member['name']} can only appear once in a match.")
+        seen.add(player_id)
+        selected.append((player_id, side, position))
+    return selected
 
 
-def all_usernames(db):
-    return [r["username"] for r in
-            db.execute("SELECT username FROM users ORDER BY username")]
+def group_members(db, group_id):
+    return db.execute(
+        "SELECT p.id, p.name FROM players p"
+        " JOIN group_players gp ON gp.player_id = p.id"
+        " WHERE gp.group_id = ? ORDER BY p.name",
+        (group_id,),
+    ).fetchall()
 
 
 @bp.route("/")
@@ -137,10 +141,14 @@ def index():
     return render_template("index.html", matches=fetch_matches(db, limit=25))
 
 
-@bp.route("/matches/new", methods=("GET", "POST"))
-@login_required
-def create():
+@bp.route("/groups/<int:group_id>/matches/new", methods=("GET", "POST"))
+def create(group_id):
     db = get_db()
+    group = db.execute("SELECT * FROM groups WHERE id = ?", (group_id,)).fetchone()
+    if group is None:
+        abort(404, "Group not found.")
+    require_unlocked(group_id)
+
     if request.method == "POST":
         match_type = request.form.get("match_type", "singles")
         played_at = request.form.get("played_at") or date.today().isoformat()
@@ -148,48 +156,48 @@ def create():
             if match_type not in ("singles", "doubles"):
                 raise ValueError("Invalid match type.")
             games, winner_side = parse_games(request.form)
-            players = resolve_players(request.form, match_type, db)
-            if g.user["id"] not in {p[0] for p in players}:
-                raise ValueError("You must be one of the players in the match.")
+            players = resolve_players(request.form, match_type, db, group_id)
         except ValueError as e:
             flash(str(e))
         else:
             cur = db.execute(
-                "INSERT INTO matches (match_type, played_at, scores, winner_side,"
-                " created_by) VALUES (?, ?, ?, ?, ?)",
-                (match_type, played_at, json.dumps(games), winner_side, g.user["id"]),
+                "INSERT INTO matches (group_id, match_type, played_at, scores,"
+                " winner_side) VALUES (?, ?, ?, ?, ?)",
+                (group_id, match_type, played_at, json.dumps(games), winner_side),
             )
             db.executemany(
-                "INSERT INTO match_players (match_id, user_id, side, position)"
+                "INSERT INTO match_players (match_id, player_id, side, position)"
                 " VALUES (?, ?, ?, ?)",
-                [(cur.lastrowid, uid, side, pos) for uid, side, pos in players],
+                [(cur.lastrowid, pid, side, pos) for pid, side, pos in players],
             )
             ratings.recompute_all(db)
             db.commit()
             return redirect(url_for("matches.detail", match_id=cur.lastrowid))
 
     return render_template(
-        "matches/form.html", match=None, today=date.today().isoformat(),
-        usernames=all_usernames(db),
+        "matches/form.html", match=None, group=group,
+        members=group_members(db, group_id), today=date.today().isoformat(),
     )
 
 
 @bp.route("/matches/<int:match_id>")
 def detail(match_id):
+    from .auth import is_unlocked
+
     match = get_match(match_id)
     return render_template(
         "matches/detail.html", match=match,
-        can_edit=is_participant(match, g.user),
+        can_edit=is_unlocked(match["group_id"]),
     )
 
 
 @bp.route("/matches/<int:match_id>/edit", methods=("GET", "POST"))
-@login_required
 def edit(match_id):
     db = get_db()
     match = get_match(match_id)
-    if not is_participant(match, g.user):
-        abort(403, "Only match participants can edit a match.")
+    group_id = match["group_id"]
+    require_unlocked(group_id)
+    group = db.execute("SELECT * FROM groups WHERE id = ?", (group_id,)).fetchone()
 
     if request.method == "POST":
         match_type = request.form.get("match_type", match["match_type"])
@@ -198,7 +206,7 @@ def edit(match_id):
             if match_type not in ("singles", "doubles"):
                 raise ValueError("Invalid match type.")
             games, winner_side = parse_games(request.form)
-            players = resolve_players(request.form, match_type, db)
+            players = resolve_players(request.form, match_type, db, group_id)
         except ValueError as e:
             flash(str(e))
         else:
@@ -209,29 +217,27 @@ def edit(match_id):
             )
             db.execute("DELETE FROM match_players WHERE match_id = ?", (match_id,))
             db.executemany(
-                "INSERT INTO match_players (match_id, user_id, side, position)"
+                "INSERT INTO match_players (match_id, player_id, side, position)"
                 " VALUES (?, ?, ?, ?)",
-                [(match_id, uid, side, pos) for uid, side, pos in players],
+                [(match_id, pid, side, pos) for pid, side, pos in players],
             )
             ratings.recompute_all(db)
             db.commit()
             return redirect(url_for("matches.detail", match_id=match_id))
 
     return render_template(
-        "matches/form.html", match=match, today=date.today().isoformat(),
-        usernames=all_usernames(db),
+        "matches/form.html", match=match, group=group,
+        members=group_members(db, group_id), today=date.today().isoformat(),
     )
 
 
 @bp.route("/matches/<int:match_id>/delete", methods=("POST",))
-@login_required
 def delete(match_id):
     db = get_db()
     match = get_match(match_id)
-    if not is_participant(match, g.user):
-        abort(403, "Only match participants can delete a match.")
+    require_unlocked(match["group_id"])
     db.execute("DELETE FROM matches WHERE id = ?", (match_id,))
     ratings.recompute_all(db)
     db.commit()
     flash("Match deleted; ratings have been recalculated.")
-    return redirect(url_for("index"))
+    return redirect(url_for("groups.detail", group_id=match["group_id"]))

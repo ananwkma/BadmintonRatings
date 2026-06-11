@@ -3,20 +3,19 @@
 {% block title %}Leaderboard{% endblock %}
 {% block header %}Leaderboard{% endblock %}
 
-{% macro board(users, kind) %}
+{% macro board(entries, kind) %}
 <div class="card board">
   <h2>{{ kind|capitalize }}</h2>
-  {% if users %}
+  {% if entries %}
   <table>
     <thead><tr><th>#</th><th>Player</th><th>Rating</th><th>W–L</th></tr></thead>
     <tbody>
-      {% for u in users %}
+      {% for p in entries %}
       <tr>
         <td>{{ loop.index }}</td>
-        <td><a href="{{ url_for('players.profile', username=u['username']) }}">{{ u['display_name'] }}</a>
-            <span class="muted">@{{ u['username'] }}</span></td>
-        <td class="rating">{{ u[kind ~ '_rating']|round|int }}</td>
-        <td>{{ u[kind ~ '_wins'] }}–{{ u[kind ~ '_losses'] }}</td>
+        <td><a href="{{ url_for('players.profile', player_id=p['id']) }}">{{ p['name'] }}</a></td>
+        <td class="rating">{{ p[kind ~ '_rating']|round|int }}</td>
+        <td>{{ p[kind ~ '_wins'] }}–{{ p[kind ~ '_losses'] }}</td>
       </tr>
       {% endfor %}
     </tbody>

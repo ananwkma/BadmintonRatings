@@ -4,22 +4,32 @@ A web app for recording badminton matches (singles and doubles) with an
 Elo-based rating system, public match feed, player search, leaderboards and
 doubles partner analysis.
 
+## Access model
+
+- **Admin** — a single password, chosen on the first visit to `/admin` and
+  stored hashed. Only the admin can add/remove player names, create
+  password-locked groups, assign players to groups, reset group passwords
+  and delete groups.
+- **Groups** — each group has its own password. Anyone who unlocks a group
+  on its page can record and edit that group's matches (between the group's
+  members), but cannot add or remove names. The admin implicitly has access
+  to every group.
+- **Everyone else** — the match feed, player profiles, search and the
+  leaderboards are fully public, no login needed.
+
 ## Features
 
-- **Accounts** — sign up with a username and password; display names are shown
-  on matches and are searchable.
 - **Record matches** — singles or doubles, with per-game scores (best of 3).
-  The winner is derived from the game scores. You must be one of the players
-  to record a match.
+  The winner is derived from the game scores. Players are picked from the
+  group's member list.
 - **Ratings** — separate Elo ratings for singles and doubles (start 1500,
   K = 32). In doubles each player's update is weighted by their own rating
   against the opposing pair's average, so a lower-rated partner gains more
   from a win than their higher-rated teammate.
-- **Editable history** — any participant can edit or delete a match. Ratings
-  are always recomputed by replaying every match in chronological order, so
-  edits to old matches correctly ripple through everyone's current rating.
-- **Public & searchable** — the match feed, player profiles and leaderboards
-  are viewable without an account, and players are searchable by name.
+- **Editable history** — anyone with the group password can edit or delete a
+  match. Ratings are always recomputed by replaying every match in
+  chronological order, so edits to old matches correctly ripple through
+  everyone's current rating.
 - **Leaderboards** — separate singles and doubles rankings.
 - **Partner analysis** — each profile breaks down doubles results by partner
   (matches, win %, net rating change together) and highlights your best
@@ -33,8 +43,8 @@ pip install -r requirements.txt
 python run.py
 ```
 
-Then open http://127.0.0.1:5000. The SQLite database is created automatically
-in `instance/badminton.sqlite` on first run.
+Then open http://127.0.0.1:5000, go to **Admin**, and set the admin password.
+The SQLite database is created automatically in `instance/badminton.sqlite`.
 
 For production, set a real secret key and use a WSGI server:
 
@@ -56,6 +66,5 @@ Ratings are *derived data*. Every create/edit/delete triggers a full replay of
 all matches ordered by date played: everyone starts at 1500 and each match
 applies a standard Elo update (`K * (result − expected)`); for doubles each
 player's expected score is computed from their own rating against the
-opposing pair's average rating. Per-match
-rating changes are stored in `rating_changes` and shown on match pages and
-profiles.
+opposing pair's average rating. Per-match rating changes are stored in
+`rating_changes` and shown on match pages and profiles.
