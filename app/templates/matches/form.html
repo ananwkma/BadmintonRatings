@@ -4,6 +4,17 @@
 {% block header %}{{ 'Edit match' if match else 'Record a match' }} <span class="muted">· {{ group['name'] }}</span>{% endblock %}
 
 {% block content %}
+{% if members|length < 2 %}
+<div class="card">
+  <p>This group {{ 'has no members' if not members else 'only has one member' }},
+     so there aren't enough players to record a match.</p>
+  {% if is_admin() %}
+  <p><a class="button" href="{{ url_for('admin.manage_group', group_id=group['id']) }}">Add players to {{ group['name'] }}</a></p>
+  {% else %}
+  <p class="muted">Ask the admin to add players to this group.</p>
+  {% endif %}
+</div>
+{% else %}
 {% set type = request.form.get('match_type') or (match['match_type'] if match else 'singles') %}
 {% set games = match['games'] if match else [] %}
 
@@ -61,4 +72,5 @@
      worked out from the game scores, and ratings update automatically{{ ' — editing recalculates everyone’s ratings' if match }}.</p>
 </form>
 <script src="{{ url_for('static', filename='app.js') }}"></script>
+{% endif %}
 {% endblock %}

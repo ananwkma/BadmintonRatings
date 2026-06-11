@@ -33,14 +33,20 @@
     {% endif %}
 
     {% if non_members %}
-    <form method="post" class="search-form">
-      <input type="hidden" name="action" value="add_member">
-      <select name="player_id" required>
-        <option value="" disabled selected>Add a player…</option>
-        {% for p in non_members %}<option value="{{ p['id'] }}">{{ p['name'] }}</option>{% endfor %}
-      </select>
-      <button type="submit">Add to group</button>
+    <form method="post">
+      <input type="hidden" name="action" value="add_members">
+      <h3>Add players to this group</h3>
+      <div class="checkbox-list">
+        {% for p in non_members %}
+        <label><input type="checkbox" name="player_ids" value="{{ p['id'] }}"> {{ p['name'] }}</label>
+        {% endfor %}
+      </div>
+      <button type="submit">Add selected players</button>
     </form>
+    {% elif not members %}
+    <p class="empty">There are no players on the roster yet — add names on the
+      <a href="{{ url_for('admin.dashboard') }}">dashboard</a> first, then add
+      them to this group here.</p>
     {% endif %}
   </div>
 

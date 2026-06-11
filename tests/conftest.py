@@ -51,10 +51,11 @@ def admin(client):
                 "/admin/groups", data={"name": name, "password": password}
             )
 
-        def add_member(self, group_id, player_id):
+        def add_members(self, group_id, *player_ids):
             return client.post(
                 f"/admin/groups/{group_id}",
-                data={"action": "add_member", "player_id": player_id},
+                data={"action": "add_members",
+                      "player_ids": [str(p) for p in player_ids]},
             )
 
     return Admin()
@@ -82,8 +83,8 @@ def club(app, client, admin):
     for name in ("Alice", "Bob", "Carol", "Dan"):
         admin.add_player(name)
     admin.create_group("Tuesday Club")
-    for name in ("Alice", "Bob", "Carol", "Dan"):
-        admin.add_member(1, player_id(app, name))
+    admin.add_members(1, *(player_id(app, name)
+                           for name in ("Alice", "Bob", "Carol", "Dan")))
     admin.logout()
     return {name: player_id(app, name) for name in ("Alice", "Bob", "Carol", "Dan")}
 

@@ -147,17 +147,24 @@ def manage_group(group_id):
 
     if request.method == "POST":
         action = request.form.get("action")
-        if action == "add_member":
-            player_id = request.form.get("player_id", type=int)
-            if player_id and db.execute(
-                "SELECT 1 FROM players WHERE id = ?", (player_id,)
-            ).fetchone():
-                db.execute(
-                    "INSERT OR IGNORE INTO group_players (group_id, player_id)"
-                    " VALUES (?, ?)",
-                    (group_id, player_id),
-                )
-                db.commit()
+        if action == "add_members":
+            player_ids = request.form.getlist("player_ids", type=int)
+            added = 0
+            for player_id in player_ids:
+                if db.execute(
+                    "SELECT 1 FROM players WHERE id = ?", (player_id,)
+                ).fetchone():
+                    db.execute(
+                        "INSERT OR IGNORE INTO group_players (group_id, player_id)"
+                        " VALUES (?, ?)",
+                        (group_id, player_id),
+                    )
+                    added += 1
+            db.commit()
+            if added:
+                flash(f"Added {added} player{'s' if added != 1 else ''} to {group['name']}.")
+            else:
+                flash("Select at least one player to add.")
         elif action == "remove_member":
             player_id = request.form.get("player_id", type=int)
             db.execute(

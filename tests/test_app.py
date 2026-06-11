@@ -48,6 +48,26 @@ def test_player_with_matches_cannot_be_removed(app, client, admin, club):
     assert get_player(app, "Alice") is not None
 
 
+def test_add_multiple_members_at_once(app, client, admin):
+    admin.setup()
+    for name in ("Alice", "Bob", "Carol"):
+        admin.add_player(name)
+    admin.create_group("Club")
+    admin.add_members(1, player_id(app, "Alice"), player_id(app, "Bob"),
+                      player_id(app, "Carol"))
+    html = client.get("/groups/1").data.decode()
+    for name in ("Alice", "Bob", "Carol"):
+        assert name in html
+
+
+def test_match_form_explains_empty_group(client, admin):
+    admin.setup()
+    admin.create_group("Empty Club")
+    resp = client.get("/groups/1/matches/new")
+    assert b"enough players to record a match" in resp.data
+    assert b"select player" not in resp.data
+
+
 def test_recording_requires_unlocked_group(app, client, club):
     resp = record_singles(client, app, "Alice", "Bob")
     assert resp.status_code == 403

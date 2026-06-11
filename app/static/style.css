@@ -66,6 +66,14 @@ button.linklike {
 button.linklike:hover { color: var(--accent) !important; }
 .inline-form { display: inline; margin: 0; }
 
+.checkbox-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.25rem 0.75rem;
+  margin: 0.5rem 0 0.75rem;
+}
+.checkbox-list label { font-weight: normal; }
+
 .card {
   background: var(--card);
   border: 1px solid var(--border);
