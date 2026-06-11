@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% from '_match_form.html' import match_form %}
 
 {% block title %}{{ 'Edit match' if match else 'Record match' }}{% endblock %}
 {% block header %}{{ 'Edit match' if match else 'Record a match' }} <span class="muted">· {{ group['name'] }}</span>{% endblock %}
@@ -15,62 +16,6 @@
   {% endif %}
 </div>
 {% else %}
-{% set type = request.form.get('match_type') or (match['match_type'] if match else 'singles') %}
-{% set games = match['games'] if match else [] %}
-
-{% macro player_select(field, side, slot, required=True) %}
-  {% set current = request.form.get(field, type=none) or
-       (match[side][slot - 1]['player_id'] if match and match[side]|length >= slot else none) %}
-  <select name="{{ field }}" {{ 'required' if required }} class="{{ 'doubles-only' if slot == 2 }}">
-    <option value="">— select player —</option>
-    {% for p in members %}
-    <option value="{{ p['id'] }}" {{ 'selected' if current|string == p['id']|string }}>{{ p['name'] }}</option>
-    {% endfor %}
-  </select>
-{% endmacro %}
-
-<form method="post" class="card form" id="match-form">
-  <fieldset class="type-toggle">
-    <legend>Match type</legend>
-    <label><input type="radio" name="match_type" value="singles" {{ 'checked' if type == 'singles' }}> Singles</label>
-    <label><input type="radio" name="match_type" value="doubles" {{ 'checked' if type == 'doubles' }}> Doubles</label>
-  </fieldset>
-
-  <label for="played_at">Date played</label>
-  <input type="date" name="played_at" id="played_at"
-         value="{{ match['played_at'] if match else today }}" required>
-
-  <div class="sides">
-    <fieldset>
-      <legend>Side 1</legend>
-      {{ player_select('side_a_1', 'side_a', 1) }}
-      {{ player_select('side_a_2', 'side_a', 2, required=False) }}
-    </fieldset>
-    <fieldset>
-      <legend>Side 2</legend>
-      {{ player_select('side_b_1', 'side_b', 1) }}
-      {{ player_select('side_b_2', 'side_b', 2, required=False) }}
-    </fieldset>
-  </div>
-
-  <fieldset>
-    <legend>Game scores <span class="muted">(side 1 – side 2; leave unused games blank)</span></legend>
-    {% for i in (1, 2, 3) %}
-    <div class="game-score">
-      <span>Game {{ i }}</span>
-      <input name="game{{ i }}_a" inputmode="numeric" size="3"
-             value="{{ request.form.get('game' ~ i ~ '_a') or (games[i-1][0] if games|length >= i else '') }}">
-      <span>–</span>
-      <input name="game{{ i }}_b" inputmode="numeric" size="3"
-             value="{{ request.form.get('game' ~ i ~ '_b') or (games[i-1][1] if games|length >= i else '') }}">
-    </div>
-    {% endfor %}
-  </fieldset>
-
-  <button type="submit">{{ 'Save changes' if match else 'Record match' }}</button>
-  <p class="muted">Players come from this group's member list. The winner is
-     worked out from the game scores, and ratings update automatically{{ ' — editing recalculates everyone’s ratings' if match }}.</p>
-</form>
-<script src="{{ url_for('static', filename='app.js') }}"></script>
+{{ match_form(group, members, match, today) }}
 {% endif %}
 {% endblock %}

@@ -11,8 +11,8 @@
     <thead><tr><th>#</th><th>Player</th><th>Rating</th><th>W–L</th></tr></thead>
     <tbody>
       {% for p in entries %}
-      <tr>
-        <td>{{ loop.index }}</td>
+      <tr class="{{ 'top-rank' if loop.index <= 3 }}">
+        <td class="rank">{{ ['🥇', '🥈', '🥉'][loop.index0] if loop.index <= 3 else loop.index }}</td>
         <td><a href="{{ url_for('players.profile', player_id=p['id']) }}">{{ p['name'] }}</a></td>
         <td class="rating">{{ p[kind ~ '_rating']|round|int }}</td>
         <td>{{ p[kind ~ '_wins'] }}–{{ p[kind ~ '_losses'] }}</td>

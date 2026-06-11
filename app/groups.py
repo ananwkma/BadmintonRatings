@@ -1,5 +1,6 @@
 from flask import (
-    Blueprint, abort, flash, redirect, render_template, request, url_for
+    Blueprint, abort, flash, redirect, render_template, request, session,
+    url_for
 )
 from werkzeug.security import check_password_hash
 
@@ -52,9 +53,13 @@ def unlock(group_id):
     group = get_group(group_id)
     if check_password_hash(group["password_hash"], request.form.get("password", "")):
         unlock_group(group_id)
+        session["active_group"] = group_id
         flash(f"Unlocked {group['name']} — you can now record and edit its matches.")
     else:
         flash("Incorrect group password.")
+    next_url = request.form.get("next", "")
+    if next_url.startswith("/"):
+        return redirect(next_url)
     return redirect(url_for("groups.detail", group_id=group_id))
 
 

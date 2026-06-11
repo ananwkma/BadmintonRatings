@@ -1,17 +1,71 @@
 {% extends 'base.html' %}
 {% from '_match_row.html' import match_row %}
+{% from '_match_form.html' import match_form %}
 
-{% block title %}Recent matches{% endblock %}
-{% block header %}Recent matches{% endblock %}
+{% block title %}Record a match{% endblock %}
 
 {% block content %}
-  {% if matches %}
-    <div class="match-list">
-      {% for match in matches %}{{ match_row(match) }}{% endfor %}
-    </div>
+{% if not groups %}
+<div class="card hero">
+  <h1>Welcome to Badminton Ratings 🏸</h1>
+  <p>Record singles and doubles matches, and Elo ratings, leaderboards and
+     partner analysis take care of themselves.</p>
+  {% if is_admin() %}
+  <p><a class="button" href="{{ url_for('admin.dashboard') }}">Set up players and a group</a></p>
   {% else %}
-    <p class="empty">No matches recorded yet. Pick a group on the
-      <a href="{{ url_for('groups.index') }}">groups page</a> and unlock it with
-      its password to record matches.</p>
+  <p class="muted">The <a href="{{ url_for('admin.login') }}">admin</a> needs to
+     add players and create a group to get started.</p>
   {% endif %}
+</div>
+{% else %}
+
+{% if groups|length > 1 %}
+<div class="group-chips">
+  <span class="muted">Group:</span>
+  {% for grp in groups %}
+  <a class="chip {{ 'active' if active_group and grp['id'] == active_group['id'] }}"
+     href="{{ url_for('index', group=grp['id']) }}">{{ '🔓' if is_unlocked(grp['id']) else '🔒' }} {{ grp['name'] }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if active_group %}
+  {% if unlocked %}
+    <h1 class="page-title">Record a match <span class="muted">· {{ active_group['name'] }}</span></h1>
+    {% if members|length < 2 %}
+    <div class="card">
+      <p>{{ active_group['name'] }} doesn't have enough members to record a match yet.</p>
+      {% if is_admin() %}
+      <p><a class="button" href="{{ url_for('admin.manage_group', group_id=active_group['id']) }}">Add players to {{ active_group['name'] }}</a></p>
+      {% else %}
+      <p class="muted">Ask the admin to add players to this group.</p>
+      {% endif %}
+    </div>
+    {% else %}
+    {{ match_form(active_group, members, none, today,
+                  action=url_for('matches.create', group_id=active_group['id'])) }}
+    {% endif %}
+  {% else %}
+    <div class="card unlock-card">
+      <h2>🔒 {{ active_group['name'] }}</h2>
+      <p>Enter the group password once and this page becomes your
+         match-recording form.</p>
+      <form method="post" action="{{ url_for('groups.unlock', group_id=active_group['id']) }}" class="search-form">
+        <input type="hidden" name="next" value="{{ url_for('index') }}">
+        <input type="password" name="password" placeholder="Group password" required>
+        <button type="submit">Unlock</button>
+      </form>
+    </div>
+  {% endif %}
+{% endif %}
+{% endif %}
+
+<h2>Recent matches</h2>
+{% if matches %}
+<div class="match-list">
+  {% for match in matches %}{{ match_row(match) }}{% endfor %}
+</div>
+{% else %}
+<p class="empty">No matches recorded yet — be the first!</p>
+{% endif %}
 {% endblock %}

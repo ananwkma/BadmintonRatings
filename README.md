@@ -23,9 +23,13 @@ doubles partner analysis.
   The winner is derived from the game scores. Players are picked from the
   group's member list.
 - **Ratings** — separate Elo ratings for singles and doubles (start 1500,
-  K = 32). In doubles each player's update is weighted by their own rating
-  against the opposing pair's average, so a lower-rated partner gains more
-  from a win than their higher-rated teammate.
+  K = 32). Beating a higher-rated opponent earns more points (standard Elo),
+  and the margin of victory scales the change: the winner's average point
+  margin per game maps to a multiplier from 0.5× (narrowest wins) to 2×
+  (blowouts), with a typical 6-point win at exactly 1×. In doubles each
+  player's update is weighted by their own rating against the opposing
+  pair's average, so a lower-rated partner gains more from a win than
+  their higher-rated teammate.
 - **Editable history** — anyone with the group password can edit or delete a
   match. Ratings are always recomputed by replaying every match in
   chronological order, so edits to old matches correctly ripple through

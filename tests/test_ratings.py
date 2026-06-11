@@ -1,11 +1,26 @@
 from conftest import get_player, record_doubles, record_singles, unlock
 
-from app.ratings import K_FACTOR, START_RATING, expected_score
+from app.ratings import (
+    K_FACTOR, START_RATING, expected_score, margin_multiplier,
+)
 
 
 def test_expected_score_symmetry():
     assert expected_score(1500, 1500) == 0.5
     assert abs(expected_score(1600, 1400) + expected_score(1400, 1600) - 1) < 1e-9
+
+
+def test_margin_multiplier_scale():
+    assert margin_multiplier([[21, 15]], "A") == 1.0  # average win: 1x
+    assert margin_multiplier([[22, 20]], "A") < 1.0  # squeaker: less
+    assert margin_multiplier([[21, 5]], "A") > 1.5  # blowout: more
+    assert margin_multiplier([[21, 0]], "A") == 2.0  # capped at 2x
+    # winner of a tight three-gamer earns less than a straight-games rout
+    tight = margin_multiplier([[21, 19], [19, 21], [21, 19]], "A")
+    rout = margin_multiplier([[21, 10], [21, 12]], "A")
+    assert tight < 1.0 < rout
+    # symmetric for side B wins
+    assert margin_multiplier([[15, 21]], "B") == 1.0
 
 
 def test_singles_match_updates_ratings(app, client, club):
@@ -65,7 +80,7 @@ def test_edit_recomputes_ratings(app, client, club):
         "/matches/1/edit",
         data={"match_type": "singles", "played_at": "2026-01-01",
               "side_a_1": club["Alice"], "side_b_1": club["Bob"],
-              "game1_a": "10", "game1_b": "21"},
+              "game1_a": "15", "game1_b": "21"},
     )
     assert resp.status_code == 302
     assert get_player(app, "Bob")["singles_rating"] == START_RATING + K_FACTOR / 2
@@ -91,3 +106,22 @@ def test_replay_order_follows_played_at(app, client, club):
     alice, bob = get_player(app, "Alice"), get_player(app, "Bob")
     assert alice["singles_rating"] > bob["singles_rating"]
     assert alice["singles_wins"] == 1 and alice["singles_losses"] == 1
+
+
+def test_blowout_wins_earn_more_points(app, client, club):
+    unlock(client)
+    record_singles(client, app, "Alice", "Bob", games=[(21, 19)])  # squeaker
+    record_singles(client, app, "Carol", "Dan", games=[(21, 5)])  # blowout
+    alice_gain = get_player(app, "Alice")["singles_rating"] - START_RATING
+    carol_gain = get_player(app, "Carol")["singles_rating"] - START_RATING
+    assert 0 < alice_gain < K_FACTOR / 2 < carol_gain
+
+
+def test_upset_wins_earn_more_points(app, client, club):
+    unlock(client)
+    # Alice climbs to 1516 beating Bob, then 1500-rated Dan upsets her
+    # with the same 21-15 scoreline and earns more than the standard 16.
+    record_singles(client, app, "Alice", "Bob", played_at="2026-01-01")
+    record_singles(client, app, "Dan", "Alice", played_at="2026-01-02")
+    dan_gain = get_player(app, "Dan")["singles_rating"] - START_RATING
+    assert dan_gain > K_FACTOR / 2

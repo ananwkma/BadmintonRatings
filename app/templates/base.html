@@ -4,31 +4,44 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{% endblock %} · Badminton Ratings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 <nav>
-  <a class="brand" href="{{ url_for('index') }}">🏸 Badminton Ratings</a>
-  <div class="nav-links">
-    <a href="{{ url_for('groups.index') }}">Groups</a>
-    <a href="{{ url_for('players.leaderboard') }}">Leaderboard</a>
-    <a href="{{ url_for('players.search') }}">Players</a>
-    {% if is_admin() %}
-      <a href="{{ url_for('admin.dashboard') }}">Admin</a>
-      <form method="post" action="{{ url_for('admin.logout') }}" class="inline-form">
-        <button class="linklike" type="submit">Log out</button>
-      </form>
-    {% else %}
-      <a href="{{ url_for('admin.login') }}">Admin</a>
-    {% endif %}
+  <div class="nav-inner">
+    <a class="brand" href="{{ url_for('index') }}"><span class="brand-icon">🏸</span> Badminton Ratings</a>
+    <div class="nav-links">
+      <a href="{{ url_for('index') }}">Record</a>
+      <a href="{{ url_for('groups.index') }}">Groups</a>
+      <a href="{{ url_for('players.leaderboard') }}">Leaderboard</a>
+      <a href="{{ url_for('players.search') }}">Players</a>
+      {% if is_admin() %}
+        <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+        <form method="post" action="{{ url_for('admin.logout') }}" class="inline-form">
+          <button class="linklike" type="submit">Log out</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('admin.login') }}">Admin</a>
+      {% endif %}
+    </div>
   </div>
 </nav>
 <main>
   {% for message in get_flashed_messages() %}
     <div class="flash">{{ message }}</div>
   {% endfor %}
+  {% if self.header() | trim %}
   <header class="page-header"><h1>{% block header %}{% endblock %}</h1></header>
+  {% endif %}
   {% block content %}{% endblock %}
 </main>
+<footer>
+  <p>🏸 Badminton Ratings — Elo-rated singles &amp; doubles ·
+     <a href="{{ url_for('players.leaderboard') }}">leaderboard</a> ·
+     <a href="{{ url_for('players.search') }}">find a player</a></p>
+</footer>
 </body>
 </html>

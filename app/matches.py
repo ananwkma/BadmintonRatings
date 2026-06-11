@@ -2,11 +2,12 @@ import json
 from datetime import date
 
 from flask import (
-    Blueprint, abort, flash, redirect, render_template, request, url_for
+    Blueprint, abort, flash, redirect, render_template, request, session,
+    url_for
 )
 
 from . import ratings
-from .auth import require_unlocked
+from .auth import is_unlocked, require_unlocked
 from .db import get_db
 
 bp = Blueprint("matches", __name__)
@@ -137,8 +138,33 @@ def group_members(db, group_id):
 
 @bp.route("/")
 def index():
+    """Home page doubles as the record-match page: it shows the form for
+    the visitor's active group (last unlocked / explicitly chosen / the
+    only one), or that group's unlock prompt, plus the recent match feed."""
     db = get_db()
-    return render_template("index.html", matches=fetch_matches(db, limit=25))
+    groups = db.execute("SELECT * FROM groups ORDER BY name").fetchall()
+
+    requested = request.args.get("group", type=int)
+    if requested and any(g["id"] == requested for g in groups):
+        session["active_group"] = requested
+
+    active = None
+    if session.get("active_group") is not None:
+        active = next(
+            (g for g in groups if g["id"] == session["active_group"]), None
+        )
+    if active is None and len(groups) == 1:
+        active = groups[0]
+
+    return render_template(
+        "index.html",
+        groups=groups,
+        active_group=active,
+        members=group_members(db, active["id"]) if active else [],
+        unlocked=is_unlocked(active["id"]) if active else False,
+        matches=fetch_matches(db, limit=15),
+        today=date.today().isoformat(),
+    )
 
 
 @bp.route("/groups/<int:group_id>/matches/new", methods=("GET", "POST"))
@@ -182,8 +208,6 @@ def create(group_id):
 
 @bp.route("/matches/<int:match_id>")
 def detail(match_id):
-    from .auth import is_unlocked
-
     match = get_match(match_id)
     return render_template(
         "matches/detail.html", match=match,

@@ -120,6 +120,29 @@ def test_matches_publicly_viewable(app, client, club):
     assert client.get("/groups/1").status_code == 200
 
 
+def test_homepage_prompts_unlock_when_locked(client, club):
+    resp = client.get("/")
+    assert b"Group password" in resp.data
+    assert b"select player" not in resp.data
+
+
+def test_homepage_shows_record_form_when_unlocked(client, club):
+    unlock(client)
+    resp = client.get("/")
+    assert b"Record a match" in resp.data
+    assert b"select player" in resp.data
+    assert b"Alice" in resp.data
+
+
+def test_homepage_group_switcher(app, client, admin, club):
+    admin.login()
+    admin.create_group("Second Club", password="other-pw")
+    admin.logout()
+    resp = client.get("/?group=2")
+    assert b"Second Club" in resp.data
+    assert b"Group password" in resp.data  # second group is locked
+
+
 def test_leaderboard_split_and_ordered(app, client, club):
     unlock(client)
     record_singles(client, app, "Alice", "Bob")
