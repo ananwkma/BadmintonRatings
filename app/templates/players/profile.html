@@ -56,7 +56,7 @@
 <h2>Match history</h2>
 {% if matches %}
 <div class="match-list">
-  {% for match in matches %}{{ match_row(match) }}{% endfor %}
+  {% for match in matches %}{{ match_row(match, perspective=player['id']) }}{% endfor %}
 </div>
 {% else %}
 <p class="empty">No matches yet.</p>

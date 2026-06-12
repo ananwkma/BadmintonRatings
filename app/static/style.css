@@ -507,6 +507,30 @@ input[type="range"]:focus { outline: 2px solid var(--accent); outline-offset: 2p
   transition: border-color 0.15s, background 0.15s;
 }
 .match-row:hover { border-color: rgba(46, 227, 110, 0.5); background: var(--card-2); }
+
+/* win/loss coloring from a player's perspective (profile pages) */
+.match-row.row-won {
+  border-left: 3px solid var(--accent);
+  background: linear-gradient(90deg, rgba(46, 227, 110, 0.07), transparent 45%), var(--card);
+}
+.match-row.row-lost {
+  border-left: 3px solid var(--danger);
+  background: linear-gradient(90deg, rgba(255, 107, 94, 0.07), transparent 45%), var(--card);
+}
+.result-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.result-chip.won { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(46, 227, 110, 0.4); }
+.result-chip.lost { background: rgba(255, 107, 94, 0.12); color: var(--danger); border: 1px solid rgba(255, 107, 94, 0.4); }
 .match-meta { display: flex; flex-direction: column; gap: 0.2rem; min-width: 92px; }
 .match-line { flex: 1; min-width: 240px; }
 .match-headline { font-size: 1.15rem; }

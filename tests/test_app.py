@@ -191,6 +191,17 @@ def test_partner_analysis(app, client, club):
     assert analysis.index("Bob") < analysis.index("Carol")
 
 
+def test_profile_history_color_coded(app, client, club):
+    unlock(client)
+    record_singles(client, app, "Alice", "Bob")
+    alice_page = client.get(f"/players/{club['Alice']}").data.decode()
+    bob_page = client.get(f"/players/{club['Bob']}").data.decode()
+    assert "row-won" in alice_page and "row-lost" not in alice_page
+    assert "row-lost" in bob_page and "row-won" not in bob_page
+    # the public feed stays neutral
+    assert "row-won" not in client.get("/").data.decode()
+
+
 def test_invalid_scores_rejected(app, client, club):
     unlock(client)
     base = {"match_type": "singles", "winner": "A",

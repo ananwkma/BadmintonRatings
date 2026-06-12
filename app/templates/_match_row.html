@@ -5,14 +5,23 @@
   {%- endfor -%}
 {%- endmacro %}
 
-{% macro match_row(match, show_group=True) %}
+{% macro match_row(match, show_group=True, perspective=None) %}
 {% set winners = match['side_a'] if match['winner_side'] == 'A' else match['side_b'] %}
 {% set losers = match['side_b'] if match['winner_side'] == 'A' else match['side_a'] %}
-<div class="match-row">
+{% set result = none %}
+{% if perspective is not none %}
+  {% set on_winning_side = perspective in winners|map(attribute='player_id')|list %}
+  {% set on_losing_side = perspective in losers|map(attribute='player_id')|list %}
+  {% set result = 'won' if on_winning_side else ('lost' if on_losing_side else none) %}
+{% endif %}
+<div class="match-row {{ 'row-' ~ result if result }}">
   <div class="match-meta">
     <span class="tag tag-{{ match['match_type'] }}">{{ match['match_type'] }}</span>
     <span class="date">{{ match['played_at'] }}</span>
   </div>
+  {% if result %}
+  <span class="result-chip {{ result }}">{{ 'W' if result == 'won' else 'L' }}</span>
+  {% endif %}
   <div class="match-line">
     <span class="winner">{{ side_names(winners) }}</span>
     <span class="vs">def.</span>
