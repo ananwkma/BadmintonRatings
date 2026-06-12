@@ -90,6 +90,30 @@ def add_player():
     return redirect(url_for("admin.dashboard"))
 
 
+@bp.route("/players/<int:player_id>/rename", methods=("POST",))
+@admin_required
+def rename_player(player_id):
+    db = get_db()
+    player = db.execute(
+        "SELECT * FROM players WHERE id = ?", (player_id,)
+    ).fetchone()
+    if player is None:
+        abort(404)
+    name = request.form.get("name", "").strip()
+    if not name:
+        flash("Player name is required.")
+    elif name != player["name"]:
+        try:
+            db.execute(
+                "UPDATE players SET name = ? WHERE id = ?", (name, player_id)
+            )
+            db.commit()
+            flash(f"Renamed {player['name']} to {name}.")
+        except db.IntegrityError:
+            flash(f"A player named {name} already exists.")
+    return redirect(url_for("admin.dashboard"))
+
+
 @bp.route("/players/<int:player_id>/delete", methods=("POST",))
 @admin_required
 def delete_player(player_id):

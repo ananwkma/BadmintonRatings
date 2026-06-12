@@ -88,14 +88,19 @@
       );
       select.selectedIndex = idx + 1;
       highlight(wheel, idx);
-      clearTimeout(settleTimers.names);
-      settleTimers.names = setTimeout(updateNames, 120);
+      clearTimeout(entry.timer);
+      entry.timer = setTimeout(function () { resolveConflict(entry); }, 150);
     });
     /* tapping a name that isn't centered selects it instead of
-       declaring the winner */
+       declaring the winner; names taken by another wheel are inert */
     wheel.addEventListener("click", function (event) {
       const num = event.target.closest(".num");
-      if (num && !num.classList.contains("sel")) {
+      if (!num) return;
+      if (num.classList.contains("taken")) {
+        event.stopPropagation();
+        return;
+      }
+      if (!num.classList.contains("sel")) {
         event.stopPropagation();
         const idx = Array.from(wheel.querySelectorAll(".num")).indexOf(num);
         wheel.scrollTo({ top: idx * entry.item, behavior: "smooth" });
@@ -103,6 +108,53 @@
     });
     nameWheels.push(entry);
   });
+
+  /* ── a player can't be on two wheels (or play themselves) ── */
+  function activeEntries() {
+    return nameWheels.filter(function (entry) {
+      return !(entry.partner && !isDoubles());
+    });
+  }
+
+  function takenBy(entry) {
+    const taken = new Set();
+    activeEntries().forEach(function (other) {
+      if (other === entry) return;
+      const idx = other.select.selectedIndex - 1;
+      if (idx >= 0) taken.add(idx);
+    });
+    return taken;
+  }
+
+  function refreshTaken() {
+    activeEntries().forEach(function (entry) {
+      const taken = takenBy(entry);
+      entry.wheel.querySelectorAll(".num").forEach(function (el, i) {
+        el.classList.toggle("taken", taken.has(i));
+      });
+    });
+  }
+
+  /* if a wheel settles on a player who is already on another wheel,
+     glide to the nearest free player instead */
+  function resolveConflict(entry) {
+    const taken = takenBy(entry);
+    let idx = entry.select.selectedIndex - 1;
+    if (taken.has(idx)) {
+      const count = entry.select.options.length - 1;
+      for (let step = 1; step < count; step++) {
+        if (idx + step < count && !taken.has(idx + step)) { idx += step; break; }
+        if (idx - step >= 0 && !taken.has(idx - step)) { idx -= step; break; }
+      }
+      if (!taken.has(idx)) {
+        entry.select.selectedIndex = idx + 1;
+        entry.wheel.scrollTo({ top: idx * entry.item, behavior: "smooth" });
+        highlight(entry.wheel, idx);
+      }
+    }
+    refreshTaken();
+    updateNames();
+  }
 
   function initNameWheels() {
     const active = nameWheels.filter(function (entry) {
@@ -126,6 +178,7 @@
       entry.wheel.scrollTo({ top: idx * entry.item });
       highlight(entry.wheel, idx);
     });
+    refreshTaken();
     updateNames();
   }
 

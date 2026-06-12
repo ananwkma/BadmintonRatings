@@ -40,6 +40,28 @@ def test_admin_adds_and_removes_players(app, client, admin):
     assert get_player(app, "Alice") is None
 
 
+def test_admin_renames_player(app, client, admin, club):
+    unlock(client)
+    record_singles(client, app, "Alice", "Bob")
+    admin.login()
+    client.post(f"/admin/players/{club['Alice']}/rename", data={"name": "Alicia"})
+    profile = client.get(f"/players/{club['Alice']}").data.decode()
+    assert "Alicia" in profile
+    assert "1516" in profile  # rating and history survive the rename
+    # duplicate names rejected
+    resp = client.post(f"/admin/players/{club['Bob']}/rename",
+                       data={"name": "Alicia"}, follow_redirects=True)
+    assert b"already exists" in resp.data
+    assert get_player(app, "Bob") is not None
+
+
+def test_rename_requires_admin(app, client, club):
+    resp = client.post(f"/admin/players/{club['Alice']}/rename",
+                       data={"name": "Hacked"})
+    assert resp.status_code == 302 and "/admin" in resp.headers["Location"]
+    assert get_player(app, "Alice") is not None
+
+
 def test_player_with_matches_cannot_be_removed(app, client, admin, club):
     unlock(client)
     record_singles(client, app, "Alice", "Bob")

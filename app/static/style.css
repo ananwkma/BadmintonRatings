@@ -378,6 +378,7 @@ input[type="radio"], input[type="checkbox"] { accent-color: var(--accent); }
   transition: color 0.12s;
 }
 .nwheel .num.sel { color: #fff; font-size: 1.32rem; }
+.nwheel .num.taken { opacity: 0.3; text-decoration: line-through; }
 form[data-type="singles"] .nwheel.partner { display: none; }
 .form-error { color: var(--danger) !important; margin: 0; }
 
@@ -614,6 +615,17 @@ input[type="range"]:focus { outline: 2px solid var(--accent); outline-offset: 2p
   margin: 0.5rem 0 0.85rem;
 }
 .checkbox-list label { font-weight: 500; }
+
+.rename-form { display: inline-flex; gap: 0.4rem; align-items: center; margin-right: 0.5rem; }
+.rename-form input {
+  width: 9.5rem;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-2);
+  color: var(--ink);
+  font-size: 0.92rem;
+}
 
 /* ───────────────────────── match list ───────────────────────── */
 

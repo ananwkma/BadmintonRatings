@@ -17,7 +17,15 @@
       <tbody>
         {% for p in players %}
         <tr>
-          <td><a href="{{ url_for('players.profile', player_id=p['id']) }}">{{ p['name'] }}</a></td>
+          <td>
+            <form method="post" class="rename-form"
+                  action="{{ url_for('admin.rename_player', player_id=p['id']) }}">
+              <input name="name" value="{{ p['name'] }}" required
+                     aria-label="Rename {{ p['name'] }}">
+              <button class="small" type="submit">Rename</button>
+            </form>
+            <a class="muted" href="{{ url_for('players.profile', player_id=p['id']) }}">profile</a>
+          </td>
           <td>{{ p['match_count'] }}</td>
           <td>
             {% if p['match_count'] == 0 %}
