@@ -79,6 +79,21 @@ nav {
   transition: color 0.15s, background 0.15s;
 }
 .nav-links a:hover, .nav-links .linklike:hover { color: #fff; background: var(--card-2); }
+.nav-links a.nav-cta {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+.nav-links a.nav-cta:hover { background: #4dec84; color: var(--accent-ink); }
+.nav-links a.admin-badge {
+  color: var(--accent);
+  border: 1px solid rgba(46, 227, 110, 0.45);
+  background: var(--accent-glow);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.nav-links a.admin-badge:hover { background: rgba(46, 227, 110, 0.2); color: var(--accent); }
 
 /* ───────────────────────── layout ───────────────────────── */
 
@@ -260,20 +275,128 @@ input[type="radio"], input[type="checkbox"] { accent-color: var(--accent); }
 .game-score .dash { width: auto; color: var(--muted); }
 .game-score input { width: 4.4rem; text-align: center; font-variant-numeric: tabular-nums; }
 
-/* ── two-step game recorder ── */
-.wizard { max-width: 580px; overflow: hidden; padding-left: 0; padding-right: 0; padding-bottom: 1.4rem; }
-.wizard .panels { display: flex; width: 200%; align-items: flex-start; }
-.wizard .panel {
-  width: 50%;
+/* ── game recorder ── */
+.wizard { max-width: 640px; }
+.js-only { display: none; }
+.wizard.js .wizard-question.js-only { display: block; }
+.wizard.js .pick-halves.js-only { display: flex; }
+.wizard.js .native-fallback { display: none; }
+.native-fallback { display: flex; flex-direction: column; gap: 0.7rem; }
+
+.type-buttons { display: flex; gap: 0.7rem; }
+.type-big {
+  flex: 1;
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
-  padding: 0 1.35rem;
+  align-items: center;
+  gap: 0.05rem;
+  padding: 1.15rem 0.5rem 1rem;
+  background: var(--card-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
 }
-/* with JS the wheel overlay replaces the fallback slider panel */
-.wizard.js .panels { width: 100%; }
-.wizard.js .panel { width: 100%; }
-.wizard.js .panel-scores { display: none; }
+.type-big input { position: absolute; opacity: 0; pointer-events: none; }
+.type-big .type-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #fff;
+}
+.type-big .type-sub { color: var(--muted); font-size: 0.8rem; }
+.type-big:hover { border-color: var(--accent); }
+.type-big:has(input:checked) { border-color: var(--accent); background: var(--accent-glow); }
+.type-big:has(input:checked) .type-name { color: var(--accent); }
+
+.wizard-question {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #fff;
+  margin: 0.4rem 0 0;
+}
+.wizard-question strong { color: var(--accent); }
+
+.pick-halves { gap: 0.7rem; align-items: stretch; }
+.pick-half {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--card-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem 0.35rem 0.6rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.pick-half:hover { border-color: var(--accent); }
+.pick-half.win-sel {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  box-shadow: 0 0 24px rgba(46, 227, 110, 0.15);
+}
+.half-label { font-family: var(--font-display); font-weight: 700; font-size: 1rem; color: #fff; text-align: center; }
+.tap-hint {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.name-wheels { width: 100%; display: flex; flex-direction: column; gap: 0.2rem; }
+.nwheel {
+  width: 100%;
+  height: 10.5rem;
+  overflow-y: scroll;
+  scrollbar-width: none;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior: contain;
+  -webkit-mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent);
+  mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent);
+}
+.nwheel::-webkit-scrollbar { display: none; }
+.nwheel .num {
+  height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.12rem;
+  color: #5a655e;
+  text-align: center;
+  padding: 0 0.2rem;
+  transition: color 0.12s;
+}
+.nwheel .num.sel { color: #fff; font-size: 1.32rem; }
+form[data-type="singles"] .nwheel.partner { display: none; }
+.form-error { color: var(--danger) !important; margin: 0; }
+
+.slider-group { margin: 0.3rem 0; }
+.score-readout {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.15rem;
+}
+.score-name { font-weight: 600; color: var(--ink); }
+.score-value {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
 
 /* ── full-screen score wheels ── */
 .score-overlay {

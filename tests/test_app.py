@@ -114,34 +114,49 @@ def test_matches_publicly_viewable(app, client, club):
     record_singles(client, app, "Alice", "Bob")
     with client.session_transaction() as session:
         session.clear()
-    resp = client.get("/")
+    resp = client.get("/", follow_redirects=True)
     assert b"Alice" in resp.data and b"Bob" in resp.data
     assert client.get("/matches/1").status_code == 200
     assert client.get("/groups/1").status_code == 200
 
 
-def test_homepage_prompts_unlock_when_locked(client, club):
+def test_homepage_is_the_group_leaderboard(client, club):
     resp = client.get("/")
-    assert b"Group password" in resp.data
-    assert b"select player" not in resp.data
+    assert resp.status_code == 302 and "/groups/1" in resp.headers["Location"]
+    resp = client.get("/", follow_redirects=True)
+    assert b"Group password" in resp.data  # locked: unlock prompt shown
+    assert b"Singles</h2>" in resp.data  # ...above the leaderboard
 
 
-def test_homepage_shows_record_form_when_unlocked(client, club):
+def test_record_page_is_standalone(client, club):
+    # locked visitors get bounced to the group page
+    resp = client.get("/groups/1/matches/new")
+    assert resp.status_code == 302
     unlock(client)
-    resp = client.get("/")
-    assert b"Record a game" in resp.data
-    assert b"Who won the game?" in resp.data
-    assert b"select player" in resp.data
-    assert b"Alice" in resp.data
+    resp = client.get("/record", follow_redirects=True)
+    assert b"tap the side that won" in resp.data
+    assert b"Singles" in resp.data and b"Doubles" in resp.data
+    # the group page no longer carries its own record button
+    assert b"matches/new" not in client.get("/groups/1").data
 
 
 def test_homepage_group_switcher(app, client, admin, club):
     admin.login()
     admin.create_group("Second Club", password="other-pw")
     admin.logout()
-    resp = client.get("/?group=2")
+    resp = client.get("/?group=2", follow_redirects=True)
     assert b"Second Club" in resp.data
     assert b"Group password" in resp.data  # second group is locked
+
+
+def test_admin_badge_and_lock_button(client, admin, club):
+    # plain unlocked visitors see neither admin badge nor lock button
+    unlock(client)
+    page = client.get("/groups/1").data
+    assert b"Admin mode" not in page and b"Lock group" not in page
+    admin.login()
+    page = client.get("/groups/1").data
+    assert b"Admin mode" in page and b"Lock group" in page
 
 
 def test_group_page_is_leaderboard_with_daily_change(app, client, club):
@@ -199,7 +214,7 @@ def test_profile_history_color_coded(app, client, club):
     assert "row-won" in alice_page and "row-lost" not in alice_page
     assert "row-lost" in bob_page and "row-won" not in bob_page
     # the public feed stays neutral
-    assert "row-won" not in client.get("/").data.decode()
+    assert "row-won" not in client.get("/", follow_redirects=True).data.decode()
 
 
 def test_records_in_visitors_timezone(app, client, club):

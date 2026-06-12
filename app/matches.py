@@ -131,18 +131,13 @@ def group_members(db, group_id):
     ).fetchall()
 
 
-@bp.route("/")
-def index():
-    """Home page doubles as the record-match page: it shows the form for
-    the visitor's active group (last unlocked / explicitly chosen / the
-    only one), or that group's unlock prompt, plus the recent match feed."""
-    db = get_db()
+def _active_group(db):
+    """The group the visitor is working with: explicitly chosen via
+    ?group=, else the last unlocked one, else the only group."""
     groups = db.execute("SELECT * FROM groups ORDER BY name").fetchall()
-
     requested = request.args.get("group", type=int)
     if requested and any(g["id"] == requested for g in groups):
         session["active_group"] = requested
-
     active = None
     if session.get("active_group") is not None:
         active = next(
@@ -150,15 +145,24 @@ def index():
         )
     if active is None and len(groups) == 1:
         active = groups[0]
+    return active
 
-    return render_template(
-        "index.html",
-        groups=groups,
-        active_group=active,
-        members=group_members(db, active["id"]) if active else [],
-        unlocked=is_unlocked(active["id"]) if active else False,
-        matches=fetch_matches(db, limit=15),
-    )
+
+@bp.route("/")
+def index():
+    """Home is the active group's page (leaderboard + recent games)."""
+    active = _active_group(get_db())
+    if active:
+        return redirect(url_for("groups.detail", group_id=active["id"]))
+    return redirect(url_for("groups.index"))
+
+
+@bp.route("/record")
+def record_shortcut():
+    active = _active_group(get_db())
+    if active:
+        return redirect(url_for("matches.create", group_id=active["id"]))
+    return redirect(url_for("groups.index"))
 
 
 @bp.route("/groups/<int:group_id>/matches/new", methods=("GET", "POST"))
@@ -167,7 +171,11 @@ def create(group_id):
     group = db.execute("SELECT * FROM groups WHERE id = ?", (group_id,)).fetchone()
     if group is None:
         abort(404, "Group not found.")
-    require_unlocked(group_id)
+    if not is_unlocked(group_id):
+        if request.method == "GET":
+            flash("Enter the group password to record games.")
+            return redirect(url_for("groups.detail", group_id=group_id))
+        require_unlocked(group_id)
 
     if request.method == "POST":
         match_type = request.form.get("match_type", "singles")

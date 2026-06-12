@@ -23,12 +23,12 @@
   <div class="nav-inner">
     <a class="brand" href="{{ url_for('index') }}"><span class="brand-icon">🏸</span> Badminton Ratings</a>
     <div class="nav-links">
-      <a href="{{ url_for('index') }}">Record</a>
+      <a class="nav-cta" href="{{ url_for('matches.record_shortcut') }}">Record</a>
       <a href="{{ url_for('groups.index') }}">Groups</a>
       <a href="{{ url_for('players.leaderboard') }}">Leaderboard</a>
       <a href="{{ url_for('players.search') }}">Players</a>
       {% if is_admin() %}
-        <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+        <a class="admin-badge" href="{{ url_for('admin.dashboard') }}">⚙ Admin mode</a>
         <form method="post" action="{{ url_for('admin.logout') }}" class="inline-form">
           <button class="linklike" type="submit">Log out</button>
         </form>

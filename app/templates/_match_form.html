@@ -1,7 +1,8 @@
 {% macro player_select(field, side, slot, members, match) %}
   {% set current = request.form.get(field) or
        (match[side][slot - 1]['player_id'] if match and match[side]|length >= slot else '') %}
-  <select name="{{ field }}" {{ 'required' if slot == 1 }} class="{{ 'doubles-only' if slot == 2 }}">
+  <select name="{{ field }}" {{ 'required' if slot == 1 }}
+          class="native-pick {{ 'doubles-only' if slot == 2 }}">
     <option value="">{{ '— select player —' if slot == 1 else '— select partner —' }}</option>
     {% for p in members %}
     <option value="{{ p['id'] }}" {{ 'selected' if current|string == p['id']|string }}>{{ p['name'] }}</option>
@@ -16,66 +17,74 @@
 {% set score_a = request.form.get('score_a') or (games[0][0] if games else 21) %}
 {% set score_b = request.form.get('score_b') or (games[0][1] if games else 15) %}
 <form method="post" action="{{ action }}" class="card form wizard" id="match-form"
-      {{ 'data-edit=1'|safe if match }}>
-  <div class="panels">
-    <section class="panel">
-      <fieldset class="type-toggle">
-        <legend>Match type</legend>
-        <label><input type="radio" name="match_type" value="singles" {{ 'checked' if type == 'singles' }}> Singles</label>
-        <label><input type="radio" name="match_type" value="doubles" {{ 'checked' if type == 'doubles' }}> Doubles</label>
+      data-type="{{ type }}" {{ 'data-edit=1'|safe if match }}>
+
+  <div class="type-buttons">
+    <label class="type-big">
+      <input type="radio" name="match_type" value="singles" {{ 'checked' if type == 'singles' }}>
+      <span class="type-name">Singles</span>
+      <span class="type-sub">1 v 1</span>
+    </label>
+    <label class="type-big">
+      <input type="radio" name="match_type" value="doubles" {{ 'checked' if type == 'doubles' }}>
+      <span class="type-name">Doubles</span>
+      <span class="type-sub">2 v 2</span>
+    </label>
+  </div>
+
+  <p class="wizard-question js-only">Spin to the players, then
+     <strong>tap the side that won</strong></p>
+
+  <div class="pick-halves js-only">
+    <div class="pick-half" data-side="A">
+      <span class="half-label score-name" data-side="A">Side 1</span>
+      <div class="name-wheels" data-side="A"></div>
+      <span class="tap-hint">tap to mark winner</span>
+    </div>
+    <div class="pick-half" data-side="B">
+      <span class="half-label score-name" data-side="B">Side 2</span>
+      <div class="name-wheels" data-side="B"></div>
+      <span class="tap-hint">tap to mark winner</span>
+    </div>
+  </div>
+  <p class="form-error muted" hidden></p>
+
+  {# fully functional fallback for browsers without JavaScript #}
+  <div class="native-fallback">
+    <div class="sides">
+      <fieldset>
+        <legend>Side 1</legend>
+        {{ player_select('side_a_1', 'side_a', 1, members, match) }}
+        {{ player_select('side_a_2', 'side_a', 2, members, match) }}
       </fieldset>
-
-      <div class="sides">
-        <fieldset>
-          <legend>Side 1</legend>
-          {{ player_select('side_a_1', 'side_a', 1, members, match) }}
-          {{ player_select('side_a_2', 'side_a', 2, members, match) }}
-        </fieldset>
-        <div class="vs-divider">vs</div>
-        <fieldset>
-          <legend>Side 2</legend>
-          {{ player_select('side_b_1', 'side_b', 1, members, match) }}
-          {{ player_select('side_b_2', 'side_b', 2, members, match) }}
-        </fieldset>
+      <fieldset>
+        <legend>Side 2</legend>
+        {{ player_select('side_b_1', 'side_b', 1, members, match) }}
+        {{ player_select('side_b_2', 'side_b', 2, members, match) }}
+      </fieldset>
+    </div>
+    <fieldset>
+      <legend>Winner</legend>
+      <label><input type="radio" name="winner" value="A" required {{ 'checked' if winner == 'A' }}> Side 1</label>
+      <label><input type="radio" name="winner" value="B" {{ 'checked' if winner == 'B' }}> Side 2</label>
+    </fieldset>
+    <div class="slider-group">
+      <div class="score-readout">
+        <span class="score-name" data-side="A">Side 1</span>
+        <output class="score-value">{{ score_a }}</output>
       </div>
-
-      <p class="wizard-question">Who won the game?</p>
-      <div class="winner-pick">
-        <label class="winner-btn">
-          <input type="radio" name="winner" value="A" required {{ 'checked' if winner == 'A' }}>
-          <span class="winner-name" data-side="A">Side 1</span>
-          <span class="muted">won</span>
-        </label>
-        <label class="winner-btn">
-          <input type="radio" name="winner" value="B" {{ 'checked' if winner == 'B' }}>
-          <span class="winner-name" data-side="B">Side 2</span>
-          <span class="muted">won</span>
-        </label>
+      <input type="range" name="score_a" min="0" max="30" step="1"
+             value="{{ score_a }}" aria-label="Side 1 score">
+    </div>
+    <div class="slider-group">
+      <div class="score-readout">
+        <span class="score-name" data-side="B">Side 2</span>
+        <output class="score-value">{{ score_b }}</output>
       </div>
-      <p class="form-error muted" hidden></p>
-    </section>
-
-    {# fallback score entry for browsers without JavaScript; with JS the
-       full-screen wheel overlay below replaces it #}
-    <section class="panel panel-scores">
-      <div class="slider-group">
-        <div class="score-readout">
-          <span class="score-name" data-side="A">Side 1</span>
-          <output class="score-value">{{ score_a }}</output>
-        </div>
-        <input type="range" name="score_a" min="0" max="30" step="1"
-               value="{{ score_a }}" aria-label="Side 1 score">
-      </div>
-      <div class="slider-group">
-        <div class="score-readout">
-          <span class="score-name" data-side="B">Side 2</span>
-          <output class="score-value">{{ score_b }}</output>
-        </div>
-        <input type="range" name="score_b" min="0" max="30" step="1"
-               value="{{ score_b }}" aria-label="Side 2 score">
-      </div>
-      <button type="submit" class="primary-action">{{ 'Save changes' if match else '🏸 Record game' }}</button>
-    </section>
+      <input type="range" name="score_b" min="0" max="30" step="1"
+             value="{{ score_b }}" aria-label="Side 2 score">
+    </div>
+    <button type="submit" class="primary-action">{{ 'Save changes' if match else '🏸 Record game' }}</button>
   </div>
 
   <div class="score-overlay" aria-hidden="true">
