@@ -387,7 +387,9 @@ input[type="radio"], input[type="checkbox"] { accent-color: var(--accent); }
   color: #fff;
 }
 .type-big .type-sub { color: var(--muted); font-size: 0.8rem; }
-.type-big:hover { border-color: var(--accent); }
+@media (hover: hover) {
+  .type-big:hover { border-color: var(--accent); }
+}
 .type-big:has(input:checked) { border-color: var(--accent); background: var(--accent-glow); }
 .type-big:has(input:checked) .type-name { color: var(--accent); }
 
@@ -416,7 +418,9 @@ input[type="radio"], input[type="checkbox"] { accent-color: var(--accent); }
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
-.pick-half:hover { border-color: var(--accent); }
+@media (hover: hover) {
+  .pick-half:hover { border-color: var(--accent); }
+}
 .pick-half.win-sel {
   border-color: var(--accent);
   background: var(--accent-glow);
