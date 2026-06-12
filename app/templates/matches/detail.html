@@ -18,21 +18,25 @@
   <table class="score-table">
     <thead><tr><th></th>{% for game in match['games'] %}<th>Game {{ loop.index }}</th>{% endfor %}</tr></thead>
     <tbody>
-      <tr><td>{{ side_names(match['side_a']) }}</td>
+      <tr><td class="{{ 'winner' if match['winner_side'] == 'A' else 'loser' }}">{{ side_names(match['side_a']) }}</td>
         {% for game in match['games'] %}<td class="{{ 'won' if game[0] > game[1] }}">{{ game[0] }}</td>{% endfor %}</tr>
-      <tr><td>{{ side_names(match['side_b']) }}</td>
+      <tr><td class="{{ 'winner' if match['winner_side'] == 'B' else 'loser' }}">{{ side_names(match['side_b']) }}</td>
         {% for game in match['games'] %}<td class="{{ 'won' if game[1] > game[0] }}">{{ game[1] }}</td>{% endfor %}</tr>
     </tbody>
   </table>
 
   <h3>Rating changes</h3>
   <ul class="delta-list">
-    {% for p in match['side_a'] + match['side_b'] %}
+    {% for side, side_players in (('A', match['side_a']), ('B', match['side_b'])) %}
+    {% for p in side_players %}
       {% set delta = match['deltas'].get(p['player_id'], 0) %}
       <li>
-        <a href="{{ url_for('players.profile', player_id=p['player_id']) }}">{{ p['name'] }}</a>
+        <span class="{{ 'winner' if match['winner_side'] == side else 'loser' }}">
+          <a href="{{ url_for('players.profile', player_id=p['player_id']) }}">{{ p['name'] }}</a>
+        </span>
         <span class="delta {{ 'pos' if delta >= 0 else 'neg' }}">{{ '%+.1f'|format(delta) }}</span>
       </li>
+    {% endfor %}
     {% endfor %}
   </ul>
 

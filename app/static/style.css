@@ -757,8 +757,6 @@ input[type="range"]:focus { outline: 2px solid var(--accent); outline-offset: 2p
 .vs { color: var(--muted); font-size: 0.85em; margin: 0 0.2rem; }
 .winner { font-weight: 700; }
 .match-line a, .match-headline a { color: var(--ink); }
-.winner a { color: var(--accent); }
-.loser a { color: var(--danger); }
 .match-line .muted a { color: var(--muted); }
 .score { margin-left: auto; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 
@@ -909,3 +907,8 @@ td a { color: var(--ink); font-weight: 600; }
   body { padding-bottom: 3.6rem; }
   footer { margin-bottom: 0; padding-bottom: 1rem; }
 }
+
+/* win/loss coloring covers every name instance, including the "&"
+   joiners — kept last so it wins over context link colors */
+.winner, .winner a { color: var(--accent); }
+.loser, .loser a { color: var(--danger); }
