@@ -21,16 +21,7 @@
 <body>
 <nav>
   <div class="nav-inner">
-    <div class="nav-left">
-      {% if current_group %}
-      <form method="post" action="{{ url_for('groups.lock', group_id=current_group['id']) }}"
-            class="inline-form">
-        <button class="logout-btn" type="submit"
-                title="Log out of {{ current_group['name'] }}">Log out</button>
-      </form>
-      {% endif %}
-      <a class="brand" href="{{ url_for('index') }}">RateMe</a>
-    </div>
+    <a class="brand" href="{{ url_for('index') }}">RateMe</a>
     <div class="nav-links">
       {% if current_group or is_admin() %}
         <a class="nav-cta" href="{{ url_for('matches.record_shortcut') }}">Record</a>

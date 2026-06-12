@@ -3,9 +3,17 @@
 {% from '_board.html' import board %}
 
 {% block title %}{{ group['name'] }}{% endblock %}
-{% block header %}{{ group['name'] }}{% endblock %}
 
 {% block content %}
+<div class="page-row">
+  <h1 class="page-title">{{ group['name'] }}</h1>
+  <form method="post" action="{{ url_for('groups.lock', group_id=group['id']) }}"
+        class="inline-form">
+    <button class="logout-btn" type="submit"
+            title="Log out of {{ group['name'] }}">Log out</button>
+  </form>
+</div>
+
 {% if members %}
 <div class="boards">
   {{ board(singles_board, 'singles', deltas) }}

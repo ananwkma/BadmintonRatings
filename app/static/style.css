@@ -94,7 +94,14 @@ nav {
   letter-spacing: 0.05em;
 }
 .nav-links a.admin-badge:hover { background: rgba(46, 227, 110, 0.2); color: var(--accent); }
-.nav-left { display: flex; align-items: center; gap: 0.8rem; min-width: 0; }
+.page-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.page-row .page-title { margin: 1rem 0 1.2rem; min-width: 0; }
 .logout-btn {
   background: rgba(255, 107, 94, 0.12);
   border: 1px solid var(--danger);
