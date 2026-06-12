@@ -22,10 +22,11 @@
   {% if result %}
   <span class="result-chip {{ result }}">{{ 'W' if result == 'won' else 'L' }}</span>
   {% endif %}
+  {# on a profile, only the viewed player's side keeps its color #}
   <div class="match-line">
-    <span class="winner">{{ side_names(winners) }}</span>
+    <span class="winner {{ 'plain' if result == 'lost' }}">{{ side_names(winners) }}</span>
     <span class="vs">def.</span>
-    <span class="loser">{{ side_names(losers) }}</span>
+    <span class="loser {{ 'plain' if result == 'won' }}">{{ side_names(losers) }}</span>
     {% if result %}
       {% set my_delta = match['deltas'].get(perspective) %}
       {% if my_delta is not none %}

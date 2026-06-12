@@ -912,3 +912,4 @@ td a { color: var(--ink); font-weight: 600; }
    joiners — kept last so it wins over context link colors */
 .winner, .winner a { color: var(--accent); }
 .loser, .loser a { color: var(--danger); }
+.plain, .plain a { color: var(--ink); }

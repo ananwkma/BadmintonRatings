@@ -342,11 +342,17 @@ def test_ranks_and_daily_movement(app, client, club):
 def test_match_history_win_loss_name_colors(app, client, club):
     unlock(client)
     record_singles(client, app, "Alice", "Bob")
+    # the shared feed colors both sides
     html = client.get("/groups/1").data.decode()
     row = html.split("match-line")[1]
     winner_part, loser_part = row.split("def.")
-    assert "Alice" in winner_part and 'class="winner"' in winner_part
-    assert "Bob" in loser_part.split("score")[0] and 'class="loser"' in loser_part
+    assert "Alice" in winner_part and 'class="winner "' in winner_part
+    assert "Bob" in loser_part.split("score")[0] and 'class="loser "' in loser_part
+    # a profile only colors the viewed player's side
+    bob = client.get(f"/players/{club['Bob']}").data.decode()
+    assert 'class="winner plain"' in bob and 'class="loser "' in bob
+    alice = client.get(f"/players/{club['Alice']}").data.decode()
+    assert 'class="winner "' in alice and 'class="loser plain"' in alice
 
 
 def test_invalid_scores_rejected(app, client, club):
