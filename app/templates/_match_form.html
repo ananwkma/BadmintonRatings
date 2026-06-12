@@ -55,36 +55,56 @@
       <p class="form-error muted" hidden></p>
     </section>
 
-    <section class="panel">
-      <button type="button" class="linklike back-btn">← Players</button>
-
+    {# fallback score entry for browsers without JavaScript; with JS the
+       full-screen wheel overlay below replaces it #}
+    <section class="panel panel-scores">
       <div class="slider-group">
         <div class="score-readout">
           <span class="score-name" data-side="A">Side 1</span>
-          <output class="score-value" id="score_a_value">{{ score_a }}</output>
+          <output class="score-value">{{ score_a }}</output>
         </div>
         <input type="range" name="score_a" min="0" max="30" step="1"
                value="{{ score_a }}" aria-label="Side 1 score">
       </div>
-
       <div class="slider-group">
         <div class="score-readout">
           <span class="score-name" data-side="B">Side 2</span>
-          <output class="score-value" id="score_b_value">{{ score_b }}</output>
+          <output class="score-value">{{ score_b }}</output>
         </div>
         <input type="range" name="score_b" min="0" max="30" step="1"
                value="{{ score_b }}" aria-label="Side 2 score">
       </div>
+      <button type="submit" class="primary-action">{{ 'Save changes' if match else '🏸 Record game' }}</button>
+    </section>
+  </div>
 
+  <div class="score-overlay" aria-hidden="true">
+    <div class="overlay-top">
+      <button type="button" class="linklike back-btn">← Players</button>
       <div class="preset-row">
         <button type="button" class="chip-btn preset-btn" data-to="21">Game to 21</button>
         <button type="button" class="chip-btn preset-btn" data-to="11">Game to 11</button>
       </div>
-
+    </div>
+    <div class="overlay-names">
+      <div class="overlay-name">
+        <span class="score-name" data-side="A">Side 1</span>
+        <span class="win-tag" data-side="A">winner</span>
+      </div>
+      <div class="overlay-name">
+        <span class="score-name" data-side="B">Side 2</span>
+        <span class="win-tag" data-side="B">winner</span>
+      </div>
+    </div>
+    <div class="score-columns">
+      <div class="lens"></div>
+      <div class="vline"></div>
+      <div class="wheel" data-side="A" tabindex="0" aria-label="Side 1 score"></div>
+      <div class="wheel" data-side="B" tabindex="0" aria-label="Side 2 score"></div>
+    </div>
+    <div class="overlay-bottom">
       <button type="submit" class="primary-action">{{ 'Save changes' if match else '🏸 Record game' }}</button>
-      <p class="muted">Slide past 21 for win-by-2 finishes. Ratings update
-         automatically — bigger margins and upset wins earn more points.</p>
-    </section>
+    </div>
   </div>
 </form>
 <script src="{{ url_for('static', filename='app.js') }}"></script>
