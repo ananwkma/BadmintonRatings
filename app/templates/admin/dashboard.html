@@ -55,13 +55,21 @@
     </form>
     {% if groups %}
     <table>
-      <thead><tr><th>Group</th><th>Members</th><th>Matches</th></tr></thead>
+      <thead><tr><th>Group</th><th>Members</th><th>Matches</th><th></th></tr></thead>
       <tbody>
         {% for grp in groups %}
         <tr>
           <td><a href="{{ url_for('admin.manage_group', group_id=grp['id']) }}">{{ grp['name'] }}</a></td>
           <td>{{ grp['member_count'] }}</td>
           <td>{{ grp['match_count'] }}</td>
+          <td>
+            <form method="post" class="inline-form"
+                  action="{{ url_for('admin.manage_group', group_id=grp['id']) }}"
+                  onsubmit="return confirm('Delete {{ grp['name'] }} and ALL {{ grp['match_count'] }} of its games? Ratings will be recalculated.')">
+              <input type="hidden" name="action" value="delete_group">
+              <button class="danger small" type="submit">Delete</button>
+            </form>
+          </td>
         </tr>
         {% endfor %}
       </tbody>

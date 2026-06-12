@@ -43,11 +43,6 @@
         });
       });
     }
-    document.querySelectorAll(".player-row[data-href]").forEach(function (row) {
-      row.addEventListener("click", function (event) {
-        if (!event.target.closest("a")) window.location = row.dataset.href;
-      });
-    });
   })();
 </script>
 {% endblock %}

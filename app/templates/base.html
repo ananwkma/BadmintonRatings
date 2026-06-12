@@ -52,5 +52,15 @@
    href="{{ url_for('admin.dashboard' if is_admin() else 'admin.login') }}"
    title="{{ 'Admin dashboard' if is_admin() else 'Admin login' }}"
    aria-label="Admin">⚙</a>
+<script>
+  /* any table row carrying data-href navigates on click, except when an
+     inner link or button was the target */
+  document.addEventListener("click", function (event) {
+    var row = event.target.closest("tr[data-href]");
+    if (row && !event.target.closest("a, button, form")) {
+      window.location = row.dataset.href;
+    }
+  });
+</script>
 </body>
 </html>

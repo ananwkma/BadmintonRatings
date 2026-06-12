@@ -89,6 +89,26 @@ def test_match_form_explains_empty_group(client, admin):
     assert b"select player" not in resp.data
 
 
+def test_admin_deletes_group(app, client, admin, club):
+    unlock(client)
+    record_singles(client, app, "Alice", "Bob")
+    assert get_player(app, "Alice")["singles_rating"] != 1500
+    admin.login()
+    resp = client.post("/admin/groups/1", data={"action": "delete_group"})
+    assert resp.status_code == 302
+    assert client.get("/groups/1").status_code == 404
+    # the group's games are gone and ratings replayed without them
+    assert get_player(app, "Alice")["singles_rating"] == 1500
+    assert get_player(app, "Alice") is not None  # players stay on the roster
+
+
+def test_group_deletion_requires_admin(client, club):
+    unlock(client)
+    resp = client.post("/admin/groups/1", data={"action": "delete_group"})
+    assert resp.status_code == 302 and "/admin" in resp.headers["Location"]
+    assert client.get("/groups/1").status_code == 200
+
+
 def test_recording_requires_unlocked_group(app, client, club):
     resp = record_singles(client, app, "Alice", "Bob")
     assert resp.status_code == 403
