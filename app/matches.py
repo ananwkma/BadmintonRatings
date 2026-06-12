@@ -1,5 +1,4 @@
 import json
-from datetime import date
 
 from flask import (
     Blueprint, abort, flash, redirect, render_template, request, session,
@@ -9,6 +8,7 @@ from flask import (
 from . import ratings
 from .auth import is_unlocked, require_unlocked
 from .db import get_db
+from .util import local_today
 
 bp = Blueprint("matches", __name__)
 
@@ -182,7 +182,7 @@ def create(group_id):
             cur = db.execute(
                 "INSERT INTO matches (group_id, match_type, played_at, scores,"
                 " winner_side) VALUES (?, ?, ?, ?, ?)",
-                (group_id, match_type, date.today().isoformat(),
+                (group_id, match_type, local_today(),
                  json.dumps(games), winner_side),
             )
             db.executemany(

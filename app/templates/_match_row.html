@@ -27,6 +27,12 @@
     <span class="vs">def.</span>
     <span>{{ side_names(losers) }}</span>
     <span class="score">{{ match['score_display'] }}</span>
+    {% if result %}
+      {% set my_delta = match['deltas'].get(perspective) %}
+      {% if my_delta is not none %}
+      <span class="delta {{ 'pos' if my_delta >= 0 else 'neg' }}">{{ '%+.1f'|format(my_delta) }}</span>
+      {% endif %}
+    {% endif %}
     {% if show_group %}
       <span class="muted">· <a href="{{ url_for('groups.detail', group_id=match['group_id']) }}">{{ match['group_name'] }}</a></span>
     {% endif %}

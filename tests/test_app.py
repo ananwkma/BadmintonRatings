@@ -202,6 +202,40 @@ def test_profile_history_color_coded(app, client, club):
     assert "row-won" not in client.get("/").data.decode()
 
 
+def test_records_in_visitors_timezone(app, client, club):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    unlock(client)
+    # UTC+14: the visitor's "today" is usually ahead of the server's
+    client.set_cookie("tz", "Pacific/Kiritimati")
+    record_singles(client, app, "Alice", "Bob")
+    html = client.get("/matches/1").data.decode()
+    local_day = datetime.now(ZoneInfo("Pacific/Kiritimati")).date().isoformat()
+    assert local_day in html
+    # and the Today column counts it for that timezone's viewer
+    board = client.get("/groups/1").data.decode()
+    assert "+16" in board
+
+
+def test_invalid_timezone_cookie_falls_back(app, client, club):
+    from datetime import date
+
+    unlock(client)
+    client.set_cookie("tz", "Not/A_Zone")
+    assert record_singles(client, app, "Alice", "Bob").status_code == 302
+    html = client.get("/matches/1").data.decode()
+    assert date.today().isoformat() in html
+
+
+def test_profile_shows_rating_changes(app, client, club):
+    unlock(client)
+    record_singles(client, app, "Alice", "Bob")
+    html = client.get(f"/players/{club['Alice']}").data.decode()
+    assert "+16" in html  # today's chip on the stat card
+    assert "+16.0" in html  # per-game delta on the history row
+
+
 def test_invalid_scores_rejected(app, client, club):
     unlock(client)
     base = {"match_type": "singles", "winner": "A",

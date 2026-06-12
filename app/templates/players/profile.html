@@ -12,16 +12,18 @@
 {% endif %}
 
 <div class="stat-cards">
+  {% for kind in ('singles', 'doubles') %}
   <div class="card stat">
-    <h3>Singles</h3>
-    <p class="rating">{{ player['singles_rating']|round|int }}</p>
-    <p class="muted">{{ player['singles_wins'] }} W – {{ player['singles_losses'] }} L</p>
+    <h3>{{ kind|capitalize }}</h3>
+    <p class="rating">{{ player[kind ~ '_rating']|round|int }}
+      {% set day = today.get(kind) %}
+      {% if day %}
+      <span class="delta day-delta {{ 'pos' if day >= 0 else 'neg' }}">{{ '%+d'|format(day|round|int) }}</span>
+      {% endif %}
+    </p>
+    <p class="muted">{{ player[kind ~ '_wins'] }} W – {{ player[kind ~ '_losses'] }} L</p>
   </div>
-  <div class="card stat">
-    <h3>Doubles</h3>
-    <p class="rating">{{ player['doubles_rating']|round|int }}</p>
-    <p class="muted">{{ player['doubles_wins'] }} W – {{ player['doubles_losses'] }} L</p>
-  </div>
+  {% endfor %}
   {% if best_partner %}
   <div class="card stat best-partner">
     <h3>Best partner</h3>

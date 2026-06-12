@@ -1,9 +1,8 @@
-from datetime import date
-
 from flask import Blueprint, abort, render_template, request
 
 from .db import get_db
 from .matches import fetch_matches
+from .util import local_today
 
 bp = Blueprint("players", __name__)
 
@@ -18,7 +17,7 @@ def today_deltas(db):
         " SUM(rc.rating_after - rc.rating_before) AS delta"
         " FROM rating_changes rc JOIN matches m ON m.id = rc.match_id"
         " WHERE m.played_at = ? GROUP BY rc.player_id, m.match_type",
-        (date.today().isoformat(),),
+        (local_today(),),
     ).fetchall()
     deltas = {}
     for row in rows:
@@ -120,4 +119,5 @@ def profile(player_id):
     return render_template(
         "players/profile.html", player=player, groups=groups, matches=matches,
         partners=partners, best_partner=best_partner,
+        today=today_deltas(db).get(player_id, {}),
     )
