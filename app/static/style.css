@@ -795,7 +795,7 @@ td a { color: var(--ink); font-weight: 600; }
 .rank-move.neg { color: var(--danger); }
 .rank-move-cell { width: 2.4rem; }
 
-.filter-chips { display: flex; gap: 0.4rem; }
+.filter-chips { display: flex; gap: 0.4rem; margin: 0.9rem 0 1.1rem; }
 .filter-chips .chip-btn.active {
   background: var(--accent);
   border-color: var(--accent);
