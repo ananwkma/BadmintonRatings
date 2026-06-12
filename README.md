@@ -1,4 +1,4 @@
-# Badminton Ratings 🏸
+# RateMe
 
 A web app for recording badminton matches (singles and doubles) with an
 Elo-based rating system, public match feed, player search, leaderboards and

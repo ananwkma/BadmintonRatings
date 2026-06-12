@@ -1,32 +1,46 @@
 {% extends 'base.html' %}
 
-{% block title %}Find players{% endblock %}
-{% block header %}Find players{% endblock %}
+{% block title %}Players{% endblock %}
+{% block header %}Players{% endblock %}
 
 {% block content %}
 <form method="get" class="search-form">
-  <input name="q" value="{{ query }}" placeholder="Search by name" autofocus>
+  <input id="player-search" name="q" value="{{ query }}"
+         placeholder="Filter players by name" autocomplete="off" autofocus>
   <button type="submit">Search</button>
 </form>
 
-{% if results is not none %}
-  {% if results %}
-  <div class="card">
-    <table>
-      <thead><tr><th>Player</th><th>Singles</th><th>Doubles</th></tr></thead>
-      <tbody>
-        {% for p in results %}
-        <tr>
-          <td><a href="{{ url_for('players.profile', player_id=p['id']) }}">{{ p['name'] }}</a></td>
-          <td>{{ p['singles_rating']|round|int }} <span class="muted">({{ p['singles_wins'] }}–{{ p['singles_losses'] }})</span></td>
-          <td>{{ p['doubles_rating']|round|int }} <span class="muted">({{ p['doubles_wins'] }}–{{ p['doubles_losses'] }})</span></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <p class="empty">No players match “{{ query }}”.</p>
-  {% endif %}
+{% if results %}
+<div class="card">
+  <table>
+    <thead><tr><th>Player</th><th>Singles</th><th>Doubles</th></tr></thead>
+    <tbody>
+      {% for p in results %}
+      <tr class="player-row" data-name="{{ p['name']|lower }}">
+        <td><a href="{{ url_for('players.profile', player_id=p['id']) }}">{{ p['name'] }}</a></td>
+        <td>{{ p['singles_rating']|round|int }} <span class="muted">({{ p['singles_wins'] }}–{{ p['singles_losses'] }})</span></td>
+        <td>{{ p['doubles_rating']|round|int }} <span class="muted">({{ p['doubles_wins'] }}–{{ p['doubles_losses'] }})</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% elif query %}
+<p class="empty">No players match “{{ query }}”.</p>
+{% else %}
+<p class="empty">No players in this group yet.</p>
 {% endif %}
+
+<script>
+  (function () {
+    var box = document.getElementById("player-search");
+    if (!box) return;
+    box.addEventListener("input", function () {
+      var q = box.value.toLowerCase();
+      document.querySelectorAll(".player-row").forEach(function (row) {
+        row.style.display = row.dataset.name.indexOf(q) === -1 ? "none" : "";
+      });
+    });
+  })();
+</script>
 {% endblock %}

@@ -135,17 +135,15 @@ def test_app_gated_behind_group_password(app, client, club):
     record_singles(client, app, "Alice", "Bob")
     with client.session_transaction() as session:
         session.clear()
-    for path in ("/groups/1", "/leaderboard", "/players?q=ali",
+    for path in ("/groups/1", "/players", "/players?q=ali",
                  f"/players/{club['Alice']}", "/matches/1"):
         resp = client.get(path)
         assert resp.status_code == 302, path
         assert "/groups" in resp.headers["Location"], path
     unlock(client)
-    for path in ("/groups/1", "/leaderboard", f"/players/{club['Alice']}",
+    for path in ("/groups/1", "/players", f"/players/{club['Alice']}",
                  "/matches/1"):
         assert client.get(path).status_code == 200, path
-    assert client.get("/matches/1").status_code == 200
-    assert client.get("/groups/1").status_code == 200
 
 
 def test_gateway_then_group_leaderboard(client, club):
@@ -199,11 +197,11 @@ def test_gateway_search(app, client, admin, club):
     assert b"Tuesday Club" in resp.data and b"Second Club" not in resp.data
 
 
-def test_admin_badge_and_group_exit(client, admin, club):
+def test_admin_badge_and_group_logout(client, admin, club):
     unlock(client)
     page = client.get("/groups/1").data
     assert b"Admin mode" not in page
-    assert "Tuesday Club ✕".encode() in page  # group log-out in the nav
+    assert b"Log out" in page  # red group log-out button in the nav
     admin.login()
     assert b"Admin mode" in client.get("/groups/1").data
 
@@ -217,22 +215,26 @@ def test_group_page_is_leaderboard_with_daily_change(app, client, club):
     assert "+16" in html and "-16" in html
 
 
-def test_leaderboard_shows_daily_change(app, client, club):
+def test_players_tab_lists_group_members(app, client, admin, club):
+    admin.login()
+    admin.add_player("Outsider")  # on the roster but not in the group
+    admin.logout()
     unlock(client)
-    record_singles(client, app, "Alice", "Bob")
-    html = client.get("/leaderboard").data.decode()
-    assert "+16" in html and "-16" in html
+    client.get("/groups/")  # consume pending flash messages
+    html = client.get("/players").data.decode()
+    for name in ("Alice", "Bob", "Carol", "Dan"):
+        assert name in html
+    assert "Outsider" not in html
 
 
-def test_leaderboard_split_and_ordered(app, client, club):
+def test_group_boards_ordered_by_rating(app, client, club):
     unlock(client)
     record_singles(client, app, "Alice", "Bob")
     record_doubles(client, app, ("Carol", "Dan"), ("Alice", "Bob"))
-    html = client.get("/leaderboard").data.decode()
-    assert html.index("Alice") < html.index("Bob")
-    singles_section, doubles_section = html.split("Doubles</h2>")
-    assert "Carol" not in singles_section.split("Singles</h2>")[1]
-    assert "Carol" in doubles_section
+    html = client.get("/groups/1").data.decode()
+    singles_board, doubles_board = html.split("Doubles</h2>")
+    assert singles_board.index("Alice") < singles_board.index("Bob")
+    assert doubles_board.index("Carol") < doubles_board.index("Alice")
 
 
 def test_player_search(client, club):

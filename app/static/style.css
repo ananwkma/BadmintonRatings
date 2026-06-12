@@ -94,8 +94,44 @@ nav {
   letter-spacing: 0.05em;
 }
 .nav-links a.admin-badge:hover { background: rgba(46, 227, 110, 0.2); color: var(--accent); }
-.nav-links .group-exit { color: var(--ink) !important; }
-.nav-links .group-exit:hover { color: var(--danger) !important; }
+.nav-left { display: flex; align-items: center; gap: 0.8rem; min-width: 0; }
+.logout-btn {
+  background: rgba(255, 107, 94, 0.12);
+  border: 1px solid var(--danger);
+  color: var(--danger) !important;
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.logout-btn:hover { background: rgba(255, 107, 94, 0.25); box-shadow: none; }
+
+/* admin gear, pinned bottom-left */
+.admin-gear {
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 30;
+  width: 2.9rem;
+  height: 2.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--card-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 1.3rem;
+  text-decoration: none;
+  transition: color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.admin-gear:hover { color: #fff; border-color: var(--accent); }
+.admin-gear.on {
+  color: var(--accent);
+  border-color: rgba(46, 227, 110, 0.5);
+  background: var(--accent-glow);
+  box-shadow: 0 0 18px rgba(46, 227, 110, 0.25);
+}
 
 /* gateway group list */
 .group-list { display: flex; flex-direction: column; gap: 0.6rem; }
@@ -660,6 +696,7 @@ input[type="range"]:focus { outline: 2px solid var(--accent); outline-offset: 2p
 
 .match-list { display: flex; flex-direction: column; gap: 0.6rem; }
 .match-row {
+  position: relative;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -669,8 +706,12 @@ input[type="range"]:focus { outline: 2px solid var(--accent); outline-offset: 2p
   gap: 1rem;
   flex-wrap: wrap;
   transition: border-color 0.15s, background 0.15s;
+  cursor: pointer;
 }
 .match-row:hover { border-color: rgba(46, 227, 110, 0.5); background: var(--card-2); }
+/* the whole card opens the game; inner links stay clickable above it */
+.match-row .row-link::after { content: ""; position: absolute; inset: 0; }
+.match-row a:not(.row-link) { position: relative; z-index: 1; }
 
 /* win/loss coloring from a player's perspective (profile pages) */
 .match-row.row-won {
@@ -705,7 +746,6 @@ input[type="range"]:focus { outline: 2px solid var(--accent); outline-offset: 2p
 .match-line a { color: var(--ink); }
 .match-line .muted a { color: var(--muted); }
 .score { margin-left: 0.6rem; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.detail-link { font-size: 0.85rem; font-weight: 700; color: var(--accent); }
 
 .tag {
   display: inline-block;
@@ -837,6 +877,7 @@ td a { color: var(--ink); font-weight: 600; }
   }
   .nav-links a, .nav-links .linklike { font-size: 0.78rem; padding: 0.3rem 0.55rem; }
   .nav-links .admin-logout { display: none; }
+  .admin-gear { bottom: 4.4rem; left: 0.75rem; width: 2.6rem; height: 2.6rem; }
   body { padding-bottom: 3.6rem; }
   footer { margin-bottom: 0; padding-bottom: 1rem; }
 }

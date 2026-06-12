@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}{% endblock %} · Badminton Ratings</title>
+  <title>{% block title %}{% endblock %} · RateMe</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -21,27 +21,26 @@
 <body>
 <nav>
   <div class="nav-inner">
-    <a class="brand" href="{{ url_for('index') }}"><span class="brand-icon">🏸</span> Badminton Ratings</a>
+    <div class="nav-left">
+      {% if current_group %}
+      <form method="post" action="{{ url_for('groups.lock', group_id=current_group['id']) }}"
+            class="inline-form">
+        <button class="logout-btn" type="submit"
+                title="Log out of {{ current_group['name'] }}">Log out</button>
+      </form>
+      {% endif %}
+      <a class="brand" href="{{ url_for('index') }}">RateMe</a>
+    </div>
     <div class="nav-links">
       {% if current_group or is_admin() %}
         <a class="nav-cta" href="{{ url_for('matches.record_shortcut') }}">Record</a>
-        <a href="{{ url_for('players.leaderboard') }}">Leaderboard</a>
         <a href="{{ url_for('players.search') }}">Players</a>
-      {% endif %}
-      {% if current_group %}
-        <form method="post" action="{{ url_for('groups.lock', group_id=current_group['id']) }}"
-              class="inline-form group-exit-form">
-          <button class="linklike group-exit" type="submit"
-                  title="Log out of {{ current_group['name'] }}">{{ current_group['name'] }} ✕</button>
-        </form>
       {% endif %}
       {% if is_admin() %}
         <a class="admin-badge" href="{{ url_for('admin.dashboard') }}">⚙ Admin mode</a>
         <form method="post" action="{{ url_for('admin.logout') }}" class="inline-form admin-logout">
           <button class="linklike" type="submit">Log out</button>
         </form>
-      {% else %}
-        <a href="{{ url_for('admin.login') }}">Admin</a>
       {% endif %}
     </div>
   </div>
@@ -56,9 +55,11 @@
   {% block content %}{% endblock %}
 </main>
 <footer>
-  <p>🏸 Badminton Ratings — Elo-rated singles &amp; doubles ·
-     <a href="{{ url_for('players.leaderboard') }}">leaderboard</a> ·
-     <a href="{{ url_for('players.search') }}">find a player</a></p>
+  <p>RateMe — Elo-rated singles &amp; doubles</p>
 </footer>
+<a class="admin-gear {{ 'on' if is_admin() }}"
+   href="{{ url_for('admin.dashboard' if is_admin() else 'admin.login') }}"
+   title="{{ 'Admin dashboard' if is_admin() else 'Admin login' }}"
+   aria-label="Admin">⚙</a>
 </body>
 </html>

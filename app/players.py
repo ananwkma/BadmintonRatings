@@ -1,6 +1,6 @@
 from flask import Blueprint, abort, render_template, request
 
-from .auth import group_required
+from .auth import active_group_id, group_required
 from .db import get_db
 from .matches import fetch_matches
 from .util import local_today
@@ -26,35 +26,26 @@ def today_deltas(db):
     return deltas
 
 
-@bp.route("/leaderboard")
-@group_required
-def leaderboard():
-    db = get_db()
-    singles = db.execute(
-        "SELECT * FROM players WHERE singles_wins + singles_losses > 0"
-        " ORDER BY singles_rating DESC, singles_wins DESC LIMIT 50"
-    ).fetchall()
-    doubles = db.execute(
-        "SELECT * FROM players WHERE doubles_wins + doubles_losses > 0"
-        " ORDER BY doubles_rating DESC, doubles_wins DESC LIMIT 50"
-    ).fetchall()
-    return render_template(
-        "players/leaderboard.html", singles=singles, doubles=doubles,
-        deltas=today_deltas(db),
-    )
-
-
 @bp.route("/players")
 @group_required
 def search():
+    """List the active group's players (the whole roster for an admin
+    outside a group), filterable with the search box."""
     db = get_db()
     query = request.args.get("q", "").strip()
-    results = None
+    group_id = active_group_id()
+    where, params = "", []
+    if group_id is not None:
+        where = "JOIN group_players gp ON gp.player_id = p.id AND gp.group_id = ?"
+        params.append(group_id)
+    name_filter = ""
     if query:
-        results = db.execute(
-            "SELECT * FROM players WHERE name LIKE ? ORDER BY name LIMIT 50",
-            (f"%{query}%",),
-        ).fetchall()
+        name_filter = "WHERE p.name LIKE ?"
+        params.append(f"%{query}%")
+    results = db.execute(
+        f"SELECT p.* FROM players p {where} {name_filter} ORDER BY p.name",
+        params,
+    ).fetchall()
     return render_template("players/search.html", query=query, results=results)
 
 
