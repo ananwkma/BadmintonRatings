@@ -30,7 +30,10 @@
       <span class="muted">{{ 'in ' ~ rank_scope if rank_scope != 'overall' else 'overall' }}</span>
     </p>
     {% endif %}
-    <p class="muted">{{ player[kind ~ '_wins'] }} W – {{ player[kind ~ '_losses'] }} L</p>
+    {% set wins = player[kind ~ '_wins'] %}
+    {% set losses = player[kind ~ '_losses'] %}
+    <p class="muted">{{ wins }} W – {{ losses }} L{% if wins + losses > 0 %}
+      · {{ (100 * wins / (wins + losses))|round|int }}%{% endif %}</p>
   </div>
   {% endfor %}
   {% if best_partner %}
@@ -64,12 +67,45 @@
 </div>
 {% endif %}
 
-<h2>Match history</h2>
+<div class="page-row">
+  <h2>Match history</h2>
+  {% if matches %}
+  <div class="filter-chips" id="history-filter">
+    <button type="button" class="chip-btn active" data-filter="all">All</button>
+    <button type="button" class="chip-btn" data-filter="singles">Singles</button>
+    <button type="button" class="chip-btn" data-filter="doubles">Doubles</button>
+  </div>
+  {% endif %}
+</div>
 {% if matches %}
 <div class="match-list">
   {% for match in matches %}{{ match_row(match, perspective=player['id']) }}{% endfor %}
 </div>
+<p class="empty filter-empty" hidden>No games of this type yet.</p>
 {% else %}
 <p class="empty">No matches yet.</p>
 {% endif %}
+
+<script>
+  (function () {
+    var bar = document.getElementById("history-filter");
+    if (!bar) return;
+    bar.addEventListener("click", function (event) {
+      var btn = event.target.closest(".chip-btn");
+      if (!btn) return;
+      bar.querySelectorAll(".chip-btn").forEach(function (b) {
+        b.classList.toggle("active", b === btn);
+      });
+      var filter = btn.dataset.filter;
+      var shown = 0;
+      document.querySelectorAll(".match-row").forEach(function (row) {
+        var show = filter === "all" || row.querySelector(".tag-" + filter);
+        row.style.display = show ? "" : "none";
+        if (show) shown += 1;
+      });
+      var empty = document.querySelector(".filter-empty");
+      if (empty) empty.hidden = shown > 0;
+    });
+  })();
+</script>
 {% endblock %}

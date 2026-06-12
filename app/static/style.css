@@ -792,9 +792,17 @@ tr[data-href] { cursor: pointer; }
 td a { color: var(--ink); font-weight: 600; }
 .rating { font-weight: 700; font-family: var(--font-display); font-size: 1.05rem; color: #fff; }
 .rank { font-size: 1.05rem; white-space: nowrap; }
-.rank-move { font-size: 0.75rem; font-weight: 700; }
+.rank-move { font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
 .rank-move.pos { color: var(--accent); }
 .rank-move.neg { color: var(--danger); }
+.rank-move-cell { width: 2.4rem; }
+
+.filter-chips { display: flex; gap: 0.4rem; }
+.filter-chips .chip-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink) !important;
+}
 .rank-line { margin: 0.1rem 0; font-weight: 600; font-size: 0.95rem; }
 .top-rank td { background: rgba(46, 227, 110, 0.05); }
 .top-rank:hover td { background: rgba(46, 227, 110, 0.09); }

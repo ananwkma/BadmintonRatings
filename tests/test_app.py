@@ -321,6 +321,9 @@ def test_profile_shows_rating_changes(app, client, club):
     html = client.get(f"/players/{club['Alice']}").data.decode()
     assert "+16" in html  # today's chip on the stat card
     assert "+16.0" in html  # per-game delta on the history row
+    assert "1 W – 0 L" in html and "100%" in html  # win rate
+    bob = client.get(f"/players/{club['Bob']}").data.decode()
+    assert "0 W – 1 L" in bob and "0%" in bob
 
 
 def test_ranks_and_daily_movement(app, client, club):
