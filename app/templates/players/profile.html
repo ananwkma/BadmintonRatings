@@ -21,6 +21,15 @@
       <span class="delta day-delta {{ 'pos' if day >= 0 else 'neg' }}">{{ '%+d'|format(day|round|int) }}</span>
       {% endif %}
     </p>
+    {% set rk = ranks.get(kind) %}
+    {% if rk %}
+    <p class="rank-line">Rank #{{ rk['rank'] }}
+      {% if rk['change'] %}
+      <span class="rank-move {{ 'pos' if rk['change'] > 0 else 'neg' }}">{{ '▲' if rk['change'] > 0 else '▼' }}{{ rk['change']|abs }}</span>
+      {% endif %}
+      <span class="muted">{{ 'in ' ~ rank_scope if rank_scope != 'overall' else 'overall' }}</span>
+    </p>
+    {% endif %}
     <p class="muted">{{ player[kind ~ '_wins'] }} W – {{ player[kind ~ '_losses'] }} L</p>
   </div>
   {% endfor %}

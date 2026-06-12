@@ -744,15 +744,23 @@ input[type="range"]:focus { outline: 2px solid var(--accent); outline-offset: 2p
 .result-chip.won { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(46, 227, 110, 0.4); }
 .result-chip.lost { background: rgba(255, 107, 94, 0.12); color: var(--danger); border: 1px solid rgba(255, 107, 94, 0.4); }
 .match-meta { display: flex; flex-direction: column; gap: 0.2rem; min-width: 92px; }
-.match-line { flex: 1; min-width: 240px; }
+.match-line {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.45rem;
+}
 .match-headline { font-size: 1.15rem; }
 .date { color: var(--muted); font-size: 0.78rem; font-variant-numeric: tabular-nums; }
 .vs { color: var(--muted); font-size: 0.85em; margin: 0 0.2rem; }
 .winner { font-weight: 700; }
 .match-line a, .match-headline a { color: var(--ink); }
-.winner a { color: #fff; }
+.winner a { color: var(--accent); }
+.loser a { color: var(--danger); }
 .match-line .muted a { color: var(--muted); }
-.score { margin-left: 0.6rem; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.score { margin-left: auto; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 .tag {
   display: inline-block;
@@ -783,7 +791,11 @@ tbody tr:hover td { background: rgba(255, 255, 255, 0.02); }
 tr[data-href] { cursor: pointer; }
 td a { color: var(--ink); font-weight: 600; }
 .rating { font-weight: 700; font-family: var(--font-display); font-size: 1.05rem; color: #fff; }
-.rank { font-size: 1.05rem; }
+.rank { font-size: 1.05rem; white-space: nowrap; }
+.rank-move { font-size: 0.75rem; font-weight: 700; }
+.rank-move.pos { color: var(--accent); }
+.rank-move.neg { color: var(--danger); }
+.rank-line { margin: 0.1rem 0; font-weight: 600; font-size: 0.95rem; }
 .top-rank td { background: rgba(46, 227, 110, 0.05); }
 .top-rank:hover td { background: rgba(46, 227, 110, 0.09); }
 .top-rank .rating { color: var(--accent); }

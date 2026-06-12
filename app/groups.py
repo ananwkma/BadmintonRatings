@@ -43,7 +43,7 @@ def index():
 
 @bp.route("/<int:group_id>")
 def detail(group_id):
-    from .players import today_deltas
+    from .players import compute_ranks, today_deltas
 
     group = get_group(group_id)
     if not is_unlocked(group_id):
@@ -68,7 +68,8 @@ def detail(group_id):
     return render_template(
         "groups/detail.html", group=group, members=members,
         singles_board=singles_board, doubles_board=doubles_board,
-        deltas=today_deltas(db), matches=matches,
+        deltas=today_deltas(db), ranks=compute_ranks(db, members),
+        matches=matches,
     )
 
 

@@ -25,8 +25,7 @@
   <div class="match-line">
     <span class="winner">{{ side_names(winners) }}</span>
     <span class="vs">def.</span>
-    <span>{{ side_names(losers) }}</span>
-    <span class="score">{{ match['score_display'] }}</span>
+    <span class="loser">{{ side_names(losers) }}</span>
     {% if result %}
       {% set my_delta = match['deltas'].get(perspective) %}
       {% if my_delta is not none %}
@@ -36,6 +35,7 @@
     {% if show_group %}
       <span class="muted">· <a href="{{ url_for('groups.detail', group_id=match['group_id']) }}">{{ match['group_name'] }}</a></span>
     {% endif %}
+    <span class="score">{{ match['score_display'] }}</span>
   </div>
   <a class="row-link" href="{{ url_for('matches.detail', match_id=match['id']) }}"
      aria-label="Game details"></a>

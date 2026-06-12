@@ -16,8 +16,8 @@
 
 {% if members %}
 <div class="boards">
-  {{ board(singles_board, 'singles', deltas) }}
-  {{ board(doubles_board, 'doubles', deltas) }}
+  {{ board(singles_board, 'singles', deltas, ranks) }}
+  {{ board(doubles_board, 'doubles', deltas, ranks) }}
 </div>
 {% else %}
 <p class="empty">No members yet — the admin can add players to this group.</p>

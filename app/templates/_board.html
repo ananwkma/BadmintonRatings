@@ -1,4 +1,10 @@
-{% macro board(entries, kind, deltas) %}
+{% macro rank_move(change) %}
+  {% if change %}
+  <span class="rank-move {{ 'pos' if change > 0 else 'neg' }}">{{ '▲' if change > 0 else '▼' }}{{ change|abs }}</span>
+  {% endif %}
+{% endmacro %}
+
+{% macro board(entries, kind, deltas, ranks) %}
 <div class="card board">
   <h2>{{ kind|capitalize }}</h2>
   {% if entries %}
@@ -8,7 +14,8 @@
       {% for p in entries %}
       <tr class="{{ 'top-rank' if loop.index <= 3 }}"
           data-href="{{ url_for('players.profile', player_id=p['id']) }}">
-        <td class="rank">{{ ['🥇', '🥈', '🥉'][loop.index0] if loop.index <= 3 else loop.index }}</td>
+        <td class="rank">{{ ['🥇', '🥈', '🥉'][loop.index0] if loop.index <= 3 else loop.index }}
+          {{ rank_move(ranks.get(p['id'], {}).get(kind, {}).get('change', 0)) }}</td>
         <td><a href="{{ url_for('players.profile', player_id=p['id']) }}">{{ p['name'] }}</a></td>
         <td class="rating">{{ p[kind ~ '_rating']|round|int }}</td>
         <td>

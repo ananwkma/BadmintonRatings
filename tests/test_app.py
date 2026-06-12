@@ -323,6 +323,29 @@ def test_profile_shows_rating_changes(app, client, club):
     assert "+16.0" in html  # per-game delta on the history row
 
 
+def test_ranks_and_daily_movement(app, client, club):
+    unlock(client)
+    # Yesterday everyone was 1500 (ranked by name: Alice, Bob, Carol, Dan).
+    # Alice beats Bob today: Bob falls from #2 to #4, Carol/Dan climb one.
+    record_singles(client, app, "Alice", "Bob")
+    board = client.get("/groups/1").data.decode()
+    assert "▼2" in board and "▲1" in board
+    bob = client.get(f"/players/{club['Bob']}").data.decode()
+    assert "Rank #4" in bob and "▼2" in bob
+    alice = client.get(f"/players/{club['Alice']}").data.decode()
+    assert "Rank #1" in alice and "▼" not in alice
+
+
+def test_match_history_win_loss_name_colors(app, client, club):
+    unlock(client)
+    record_singles(client, app, "Alice", "Bob")
+    html = client.get("/groups/1").data.decode()
+    row = html.split("match-line")[1]
+    winner_part, loser_part = row.split("def.")
+    assert "Alice" in winner_part and 'class="winner"' in winner_part
+    assert "Bob" in loser_part.split("score")[0] and 'class="loser"' in loser_part
+
+
 def test_invalid_scores_rejected(app, client, club):
     unlock(client)
     base = {"match_type": "singles", "winner": "A",
