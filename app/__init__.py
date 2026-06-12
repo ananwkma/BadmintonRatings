@@ -31,4 +31,16 @@ def create_app(test_config=None):
     app.jinja_env.globals["is_admin"] = auth.is_admin
     app.jinja_env.globals["is_unlocked"] = auth.is_unlocked
 
+    @app.context_processor
+    def inject_current_group():
+        from flask import session
+
+        group = None
+        group_id = session.get("active_group")
+        if group_id is not None:
+            group = db.get_db().execute(
+                "SELECT id, name FROM groups WHERE id = ?", (group_id,)
+            ).fetchone()
+        return {"current_group": group}
+
     return app

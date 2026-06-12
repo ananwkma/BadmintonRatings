@@ -22,12 +22,11 @@ def test_wrong_admin_password_rejected(client, admin):
     assert resp.status_code == 302  # bounced to login
 
 
-def test_only_admin_manages_roster(client, admin):
+def test_only_admin_manages_roster(app, client, admin):
     admin.setup()
     admin.logout()
     assert client.post("/admin/players", data={"name": "Eve"}).status_code == 302
-    resp = client.get("/players?q=Eve")
-    assert b"No players match" in resp.data  # add was bounced to login, not applied
+    assert get_player(app, "Eve") is None  # add was bounced to login, not applied
 
 
 def test_admin_adds_and_removes_players(app, client, admin):
@@ -105,10 +104,10 @@ def test_group_members_can_record_and_edit(app, client, club):
     unlock(client)
     assert record_singles(client, app, "Alice", "Bob").status_code == 302
     assert client.get("/matches/1/edit").status_code == 200
-    # a fresh session (no password) cannot edit, but can view
+    # a fresh session (no password) can neither view nor edit
     with client.session_transaction() as session:
         session.clear()
-    assert client.get("/matches/1").status_code == 200
+    assert client.get("/matches/1").status_code == 302
     assert client.get("/matches/1/edit").status_code == 403
     assert client.post("/matches/1/delete").status_code == 403
 
@@ -131,23 +130,34 @@ def test_players_must_belong_to_group(app, client, admin, club):
     assert b"must be members of this group" in resp.data
 
 
-def test_matches_publicly_viewable(app, client, club):
+def test_app_gated_behind_group_password(app, client, club):
     unlock(client)
     record_singles(client, app, "Alice", "Bob")
     with client.session_transaction() as session:
         session.clear()
-    resp = client.get("/", follow_redirects=True)
-    assert b"Alice" in resp.data and b"Bob" in resp.data
+    for path in ("/groups/1", "/leaderboard", "/players?q=ali",
+                 f"/players/{club['Alice']}", "/matches/1"):
+        resp = client.get(path)
+        assert resp.status_code == 302, path
+        assert "/groups" in resp.headers["Location"], path
+    unlock(client)
+    for path in ("/groups/1", "/leaderboard", f"/players/{club['Alice']}",
+                 "/matches/1"):
+        assert client.get(path).status_code == 200, path
     assert client.get("/matches/1").status_code == 200
     assert client.get("/groups/1").status_code == 200
 
 
-def test_homepage_is_the_group_leaderboard(client, club):
-    resp = client.get("/")
-    assert resp.status_code == 302 and "/groups/1" in resp.headers["Location"]
+def test_gateway_then_group_leaderboard(client, club):
+    # locked: home is the gateway listing groups with password fields
     resp = client.get("/", follow_redirects=True)
-    assert b"Group password" in resp.data  # locked: unlock prompt shown
-    assert b"Singles</h2>" in resp.data  # ...above the leaderboard
+    assert b"Choose your group" in resp.data
+    assert b"Tuesday Club" in resp.data and b"Group password" in resp.data
+    assert b"Singles</h2>" not in resp.data
+    # unlocked: home is the group leaderboard
+    unlock(client)
+    resp = client.get("/", follow_redirects=True)
+    assert b"Singles</h2>" in resp.data
 
 
 def test_record_page_is_standalone(client, club):
@@ -162,23 +172,40 @@ def test_record_page_is_standalone(client, club):
     assert b"matches/new" not in client.get("/groups/1").data
 
 
-def test_homepage_group_switcher(app, client, admin, club):
+def test_only_one_group_at_a_time(app, client, admin, club):
     admin.login()
     admin.create_group("Second Club", password="other-pw")
     admin.logout()
-    resp = client.get("/?group=2", follow_redirects=True)
-    assert b"Second Club" in resp.data
-    assert b"Group password" in resp.data  # second group is locked
+    unlock(client, group_id=1)
+    assert client.get("/groups/1").status_code == 200
+    # unlocking the second group replaces the first
+    unlock(client, group_id=2, password="other-pw")
+    assert client.get("/groups/2").status_code == 200
+    assert client.get("/groups/1").status_code == 302
 
 
-def test_admin_badge_and_lock_button(client, admin, club):
-    # plain unlocked visitors see neither admin badge nor lock button
+def test_group_logout_returns_to_gateway(client, club):
+    unlock(client)
+    resp = client.post("/groups/1/lock", follow_redirects=True)
+    assert b"Choose your group" in resp.data
+    assert client.get("/groups/1").status_code == 302
+
+
+def test_gateway_search(app, client, admin, club):
+    admin.login()
+    admin.create_group("Second Club", password="other-pw")
+    admin.logout()
+    resp = client.get("/groups/?q=Tues")
+    assert b"Tuesday Club" in resp.data and b"Second Club" not in resp.data
+
+
+def test_admin_badge_and_group_exit(client, admin, club):
     unlock(client)
     page = client.get("/groups/1").data
-    assert b"Admin mode" not in page and b"Lock group" not in page
+    assert b"Admin mode" not in page
+    assert "Tuesday Club ✕".encode() in page  # group log-out in the nav
     admin.login()
-    page = client.get("/groups/1").data
-    assert b"Admin mode" in page and b"Lock group" in page
+    assert b"Admin mode" in client.get("/groups/1").data
 
 
 def test_group_page_is_leaderboard_with_daily_change(app, client, club):
@@ -209,6 +236,7 @@ def test_leaderboard_split_and_ordered(app, client, club):
 
 
 def test_player_search(client, club):
+    unlock(client)
     resp = client.get("/players?q=ali")
     assert b"Alice" in resp.data
     resp = client.get("/players?q=zzz")

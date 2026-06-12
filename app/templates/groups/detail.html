@@ -6,19 +6,6 @@
 {% block header %}{{ group['name'] }}{% endblock %}
 
 {% block content %}
-{% if not unlocked %}
-  <form method="post" action="{{ url_for('groups.unlock', group_id=group['id']) }}" class="search-form">
-    <input type="password" name="password" placeholder="Group password" required>
-    <button type="submit">🔒 Unlock to record games</button>
-  </form>
-{% elif is_admin() %}
-  <div class="actions">
-    <form method="post" action="{{ url_for('groups.lock', group_id=group['id']) }}" class="inline-form">
-      <button class="linklike" type="submit">Lock group</button>
-    </form>
-  </div>
-{% endif %}
-
 {% if members %}
 <div class="boards">
   {{ board(singles_board, 'singles', deltas) }}

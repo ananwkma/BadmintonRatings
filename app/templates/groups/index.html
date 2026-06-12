@@ -1,27 +1,59 @@
 {% extends 'base.html' %}
 
-{% block title %}Groups{% endblock %}
-{% block header %}Groups{% endblock %}
+{% block title %}Choose your group{% endblock %}
+{% block header %}Choose your group{% endblock %}
 
 {% block content %}
-{% if groups %}
-<div class="card">
-  <table>
-    <thead><tr><th>Group</th><th>Members</th><th>Matches</th><th></th></tr></thead>
-    <tbody>
-      {% for grp in groups %}
-      <tr>
-        <td><a href="{{ url_for('groups.detail', group_id=grp['id']) }}">{{ grp['name'] }}</a></td>
-        <td>{{ grp['member_count'] }}</td>
-        <td>{{ grp['match_count'] }}</td>
-        <td>{{ '🔓 unlocked' if is_unlocked(grp['id']) else '🔒' }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+{% if current_group %}
+<div class="card now-in">
+  <p>You're in <strong>{{ current_group['name'] }}</strong> —
+     <a href="{{ url_for('groups.detail', group_id=current_group['id']) }}">go back</a>,
+     or unlock a different group below to switch.</p>
 </div>
+{% endif %}
+
+<form method="get" class="search-form">
+  <input id="group-search" name="q" value="{{ query }}"
+         placeholder="Search for your group" autocomplete="off">
+  <button type="submit">Search</button>
+</form>
+
+{% if groups %}
+<div class="group-list">
+  {% for grp in groups %}
+  <div class="card group-row" data-name="{{ grp['name']|lower }}">
+    <div class="group-info">
+      <span class="group-name">{{ grp['name'] }}</span>
+      <span class="muted">{{ grp['member_count'] }} players · {{ grp['match_count'] }} games</span>
+    </div>
+    <form method="post" action="{{ url_for('groups.unlock', group_id=grp['id']) }}" class="unlock-inline">
+      {% if is_admin() %}
+      <button type="submit" class="small">Enter</button>
+      {% else %}
+      <input type="password" name="password" placeholder="Group password" required>
+      <button type="submit">Unlock</button>
+      {% endif %}
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% elif query %}
+<p class="empty">No groups match “{{ query }}”.</p>
 {% else %}
 <p class="empty">No groups yet. The admin can create groups from the
   <a href="{{ url_for('admin.login') }}">admin dashboard</a>.</p>
 {% endif %}
+
+<script>
+  (function () {
+    var box = document.getElementById("group-search");
+    if (!box) return;
+    box.addEventListener("input", function () {
+      var q = box.value.toLowerCase();
+      document.querySelectorAll(".group-row").forEach(function (row) {
+        row.style.display = row.dataset.name.indexOf(q) === -1 ? "none" : "";
+      });
+    });
+  })();
+</script>
 {% endblock %}

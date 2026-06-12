@@ -94,6 +94,35 @@ nav {
   letter-spacing: 0.05em;
 }
 .nav-links a.admin-badge:hover { background: rgba(46, 227, 110, 0.2); color: var(--accent); }
+.nav-links .group-exit { color: var(--ink) !important; }
+.nav-links .group-exit:hover { color: var(--danger) !important; }
+
+/* gateway group list */
+.group-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.group-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-bottom: 0;
+  padding: 0.9rem 1.2rem;
+}
+.group-info { display: flex; flex-direction: column; min-width: 0; }
+.group-name { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; color: #fff; }
+.unlock-inline { display: flex; gap: 0.5rem; align-items: center; }
+.unlock-inline input {
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card-2);
+  color: var(--ink);
+  width: 11rem;
+  max-width: 45vw;
+}
+.unlock-inline input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+.now-in { border-color: rgba(46, 227, 110, 0.4); }
+.now-in p { margin: 0; }
 
 /* ───────────────────────── layout ───────────────────────── */
 
@@ -807,7 +836,7 @@ td a { color: var(--ink); font-weight: 600; }
     padding: 0.55rem 0.4rem calc(0.55rem + env(safe-area-inset-bottom));
   }
   .nav-links a, .nav-links .linklike { font-size: 0.78rem; padding: 0.3rem 0.55rem; }
-  .nav-links .inline-form { display: none; }
+  .nav-links .admin-logout { display: none; }
   body { padding-bottom: 3.6rem; }
   footer { margin-bottom: 0; padding-bottom: 1rem; }
 }

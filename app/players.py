@@ -1,5 +1,6 @@
 from flask import Blueprint, abort, render_template, request
 
+from .auth import group_required
 from .db import get_db
 from .matches import fetch_matches
 from .util import local_today
@@ -26,6 +27,7 @@ def today_deltas(db):
 
 
 @bp.route("/leaderboard")
+@group_required
 def leaderboard():
     db = get_db()
     singles = db.execute(
@@ -43,6 +45,7 @@ def leaderboard():
 
 
 @bp.route("/players")
+@group_required
 def search():
     db = get_db()
     query = request.args.get("q", "").strip()
@@ -100,6 +103,7 @@ def partner_stats(db, player_id):
 
 
 @bp.route("/players/<int:player_id>")
+@group_required
 def profile(player_id):
     db = get_db()
     player = db.execute(

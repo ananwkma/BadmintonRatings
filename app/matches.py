@@ -131,37 +131,30 @@ def group_members(db, group_id):
     ).fetchall()
 
 
-def _active_group(db):
-    """The group the visitor is working with: explicitly chosen via
-    ?group=, else the last unlocked one, else the only group."""
-    groups = db.execute("SELECT * FROM groups ORDER BY name").fetchall()
-    requested = request.args.get("group", type=int)
-    if requested and any(g["id"] == requested for g in groups):
-        session["active_group"] = requested
-    active = None
-    if session.get("active_group") is not None:
-        active = next(
-            (g for g in groups if g["id"] == session["active_group"]), None
-        )
-    if active is None and len(groups) == 1:
-        active = groups[0]
-    return active
+def _active_group_id(db):
+    group_id = session.get("active_group")
+    if group_id is not None and db.execute(
+        "SELECT 1 FROM groups WHERE id = ?", (group_id,)
+    ).fetchone():
+        return group_id
+    return None
 
 
 @bp.route("/")
 def index():
-    """Home is the active group's page (leaderboard + recent games)."""
-    active = _active_group(get_db())
-    if active:
-        return redirect(url_for("groups.detail", group_id=active["id"]))
+    """Home is your group's page (leaderboard + recent games); without
+    an unlocked group you land on the gateway."""
+    group_id = _active_group_id(get_db())
+    if group_id is not None:
+        return redirect(url_for("groups.detail", group_id=group_id))
     return redirect(url_for("groups.index"))
 
 
 @bp.route("/record")
 def record_shortcut():
-    active = _active_group(get_db())
-    if active:
-        return redirect(url_for("matches.create", group_id=active["id"]))
+    group_id = _active_group_id(get_db())
+    if group_id is not None:
+        return redirect(url_for("matches.create", group_id=group_id))
     return redirect(url_for("groups.index"))
 
 
@@ -174,7 +167,7 @@ def create(group_id):
     if not is_unlocked(group_id):
         if request.method == "GET":
             flash("Enter the group password to record games.")
-            return redirect(url_for("groups.detail", group_id=group_id))
+            return redirect(url_for("groups.index"))
         require_unlocked(group_id)
 
     if request.method == "POST":
@@ -211,6 +204,9 @@ def create(group_id):
 @bp.route("/matches/<int:match_id>")
 def detail(match_id):
     match = get_match(match_id)
+    if not is_unlocked(match["group_id"]):
+        flash("Unlock the group to view its games.")
+        return redirect(url_for("groups.index"))
     return render_template(
         "matches/detail.html", match=match,
         can_edit=is_unlocked(match["group_id"]),
