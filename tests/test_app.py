@@ -355,6 +355,25 @@ def test_match_history_win_loss_name_colors(app, client, club):
     assert 'class="winner "' in alice and 'class="loser plain"' in alice
 
 
+def test_game_detail_merged_table(app, client, club):
+    unlock(client)
+    record_singles(client, app, "Alice", "Bob")
+    html = client.get("/matches/1").data.decode()
+    assert "Game 1" not in html
+    assert "Rating changes" not in html
+    assert html.count("+16.0") == 1  # single merged table, no repeats
+    assert "Rating ±" in html
+
+
+def test_profile_bolds_viewed_player(app, client, club):
+    unlock(client)
+    record_singles(client, app, "Alice", "Bob")
+    bob = client.get(f"/players/{club['Bob']}").data.decode()
+    row = bob.split("match-line")[1].split("</div>")[0]
+    assert "class=me" in row.split("def.")[1]  # Bob (loser) is the bold one
+    assert "class=me" not in row.split("def.")[0]
+
+
 def test_invalid_scores_rejected(app, client, club):
     unlock(client)
     base = {"match_type": "singles", "winner": "A",

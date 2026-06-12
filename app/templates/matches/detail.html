@@ -16,29 +16,28 @@
     <span class="loser">{{ side_names(losers) }}</span>
   </p>
   <table class="score-table">
-    <thead><tr><th></th>{% for game in match['games'] %}<th>Game {{ loop.index }}</th>{% endfor %}</tr></thead>
+    <thead><tr><th>Player</th><th>Score</th><th>Rating ±</th></tr></thead>
     <tbody>
-      <tr><td class="{{ 'winner' if match['winner_side'] == 'A' else 'loser' }}">{{ side_names(match['side_a']) }}</td>
-        {% for game in match['games'] %}<td class="{{ 'won' if game[0] > game[1] }}">{{ game[0] }}</td>{% endfor %}</tr>
-      <tr><td class="{{ 'winner' if match['winner_side'] == 'B' else 'loser' }}">{{ side_names(match['side_b']) }}</td>
-        {% for game in match['games'] %}<td class="{{ 'won' if game[1] > game[0] }}">{{ game[1] }}</td>{% endfor %}</tr>
+      {% for side, side_players in (('A', match['side_a']), ('B', match['side_b'])) %}
+      {% set won = match['winner_side'] == side %}
+      {% set col = 0 if side == 'A' else 1 %}
+      {% for p in side_players %}
+      <tr>
+        <td class="{{ 'winner' if won else 'loser' }}">
+          <a href="{{ url_for('players.profile', player_id=p['player_id']) }}">{{ p['name'] }}</a>
+        </td>
+        {% if loop.first %}
+        <td class="game-pts {{ 'won' if won }}" rowspan="{{ side_players|length }}">
+          {%- for game in match['games'] %}{{ game[col] }}{{ ', ' if not loop.last }}{% endfor -%}
+        </td>
+        {% endif %}
+        {% set delta = match['deltas'].get(p['player_id'], 0) %}
+        <td class="delta {{ 'pos' if delta >= 0 else 'neg' }}">{{ '%+.1f'|format(delta) }}</td>
+      </tr>
+      {% endfor %}
+      {% endfor %}
     </tbody>
   </table>
-
-  <h3>Rating changes</h3>
-  <ul class="delta-list">
-    {% for side, side_players in (('A', match['side_a']), ('B', match['side_b'])) %}
-    {% for p in side_players %}
-      {% set delta = match['deltas'].get(p['player_id'], 0) %}
-      <li>
-        <span class="{{ 'winner' if match['winner_side'] == side else 'loser' }}">
-          <a href="{{ url_for('players.profile', player_id=p['player_id']) }}">{{ p['name'] }}</a>
-        </span>
-        <span class="delta {{ 'pos' if delta >= 0 else 'neg' }}">{{ '%+.1f'|format(delta) }}</span>
-      </li>
-    {% endfor %}
-    {% endfor %}
-  </ul>
 
   {% if match['updated_at'] %}<p class="muted">Edited {{ match['updated_at'] }} UTC</p>{% endif %}
 

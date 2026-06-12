@@ -913,3 +913,15 @@ td a { color: var(--ink); font-weight: 600; }
 .winner, .winner a { color: var(--accent); }
 .loser, .loser a { color: var(--danger); }
 .plain, .plain a { color: var(--ink); }
+
+/* on profile rows, bold marks the viewed player rather than the winners */
+.match-row.row-won .winner, .match-row.row-lost .winner { font-weight: 400; }
+.match-row .me { font-weight: 800; }
+
+/* merged score + rating table on the game page */
+.score-table .game-pts {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.35rem;
+  vertical-align: middle;
+}

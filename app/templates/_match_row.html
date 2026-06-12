@@ -1,6 +1,7 @@
-{% macro side_names(side) -%}
+{% macro side_names(side, me=None) -%}
   {%- for p in side -%}
-    <a href="{{ url_for('players.profile', player_id=p['player_id']) }}">{{ p['name'] }}</a>
+    <a {{ 'class=me'|safe if me is not none and p['player_id'] == me }}
+       href="{{ url_for('players.profile', player_id=p['player_id']) }}">{{ p['name'] }}</a>
     {%- if not loop.last %} &amp; {% endif -%}
   {%- endfor -%}
 {%- endmacro %}
@@ -22,11 +23,12 @@
   {% if result %}
   <span class="result-chip {{ result }}">{{ 'W' if result == 'won' else 'L' }}</span>
   {% endif %}
-  {# on a profile, only the viewed player's side keeps its color #}
+  {# on a profile, only the viewed player's side keeps its color and
+     only the viewed player is bold #}
   <div class="match-line">
-    <span class="winner {{ 'plain' if result == 'lost' }}">{{ side_names(winners) }}</span>
+    <span class="winner {{ 'plain' if result == 'lost' }}">{{ side_names(winners, me=perspective) }}</span>
     <span class="vs">def.</span>
-    <span class="loser {{ 'plain' if result == 'won' }}">{{ side_names(losers) }}</span>
+    <span class="loser {{ 'plain' if result == 'won' }}">{{ side_names(losers, me=perspective) }}</span>
     {% if result %}
       {% set my_delta = match['deltas'].get(perspective) %}
       {% if my_delta is not none %}
