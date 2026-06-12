@@ -1,34 +1,12 @@
 {% extends 'base.html' %}
+{% from '_board.html' import board %}
 
 {% block title %}Leaderboard{% endblock %}
 {% block header %}Leaderboard{% endblock %}
 
-{% macro board(entries, kind) %}
-<div class="card board">
-  <h2>{{ kind|capitalize }}</h2>
-  {% if entries %}
-  <table>
-    <thead><tr><th>#</th><th>Player</th><th>Rating</th><th>W–L</th></tr></thead>
-    <tbody>
-      {% for p in entries %}
-      <tr class="{{ 'top-rank' if loop.index <= 3 }}">
-        <td class="rank">{{ ['🥇', '🥈', '🥉'][loop.index0] if loop.index <= 3 else loop.index }}</td>
-        <td><a href="{{ url_for('players.profile', player_id=p['id']) }}">{{ p['name'] }}</a></td>
-        <td class="rating">{{ p[kind ~ '_rating']|round|int }}</td>
-        <td>{{ p[kind ~ '_wins'] }}–{{ p[kind ~ '_losses'] }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <p class="empty">No {{ kind }} matches recorded yet.</p>
-  {% endif %}
-</div>
-{% endmacro %}
-
 {% block content %}
 <div class="boards">
-  {{ board(singles, 'singles') }}
-  {{ board(doubles, 'doubles') }}
+  {{ board(singles, 'singles', deltas) }}
+  {{ board(doubles, 'doubles', deltas) }}
 </div>
 {% endblock %}

@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% from '_match_row.html' import match_row %}
+{% from '_board.html' import board %}
 
 {% block title %}{{ group['name'] }}{% endblock %}
 {% block header %}{{ group['name'] }}{% endblock %}
@@ -7,47 +8,35 @@
 {% block content %}
 {% if unlocked %}
   <div class="actions">
-    <a class="button" href="{{ url_for('matches.create', group_id=group['id']) }}">Record game</a>
+    <a class="button" href="{{ url_for('matches.create', group_id=group['id']) }}">🏸 Record game</a>
     {% if not is_admin() %}
     <form method="post" action="{{ url_for('groups.lock', group_id=group['id']) }}" class="inline-form">
       <button class="linklike" type="submit">Lock group</button>
     </form>
     {% endif %}
-    <span class="muted">🔓 Unlocked — you can record and edit this group's matches.</span>
   </div>
 {% else %}
   <form method="post" action="{{ url_for('groups.unlock', group_id=group['id']) }}" class="search-form">
     <input type="password" name="password" placeholder="Group password" required>
-    <button type="submit">🔒 Unlock to record matches</button>
+    <button type="submit">🔒 Unlock to record games</button>
   </form>
 {% endif %}
 
-<h2>Members</h2>
 {% if members %}
-<div class="card">
-  <table>
-    <thead><tr><th>Player</th><th>Singles</th><th>Doubles</th></tr></thead>
-    <tbody>
-      {% for p in members %}
-      <tr>
-        <td><a href="{{ url_for('players.profile', player_id=p['id']) }}">{{ p['name'] }}</a></td>
-        <td>{{ p['singles_rating']|round|int }} <span class="muted">({{ p['singles_wins'] }}–{{ p['singles_losses'] }})</span></td>
-        <td>{{ p['doubles_rating']|round|int }} <span class="muted">({{ p['doubles_wins'] }}–{{ p['doubles_losses'] }})</span></td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="boards">
+  {{ board(singles_board, 'singles', deltas) }}
+  {{ board(doubles_board, 'doubles', deltas) }}
 </div>
 {% else %}
 <p class="empty">No members yet — the admin can add players to this group.</p>
 {% endif %}
 
-<h2>Recent matches</h2>
+<h2>Recent games</h2>
 {% if matches %}
 <div class="match-list">
   {% for match in matches %}{{ match_row(match, show_group=False) }}{% endfor %}
 </div>
 {% else %}
-<p class="empty">No matches recorded in this group yet.</p>
+<p class="empty">No games recorded in this group yet.</p>
 {% endif %}
 {% endblock %}

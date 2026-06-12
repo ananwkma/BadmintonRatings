@@ -1,3 +1,5 @@
+from datetime import date
+
 from flask import Blueprint, abort, render_template, request
 
 from .db import get_db
@@ -6,6 +8,22 @@ from .matches import fetch_matches
 bp = Blueprint("players", __name__)
 
 MIN_PARTNER_MATCHES = 2  # matches together before a pairing is ranked "best"
+
+
+def today_deltas(db):
+    """Net rating change per player for games played today, split by
+    discipline: {player_id: {'singles': +16.0, 'doubles': -12.3}}."""
+    rows = db.execute(
+        "SELECT rc.player_id, m.match_type,"
+        " SUM(rc.rating_after - rc.rating_before) AS delta"
+        " FROM rating_changes rc JOIN matches m ON m.id = rc.match_id"
+        " WHERE m.played_at = ? GROUP BY rc.player_id, m.match_type",
+        (date.today().isoformat(),),
+    ).fetchall()
+    deltas = {}
+    for row in rows:
+        deltas.setdefault(row["player_id"], {})[row["match_type"]] = row["delta"]
+    return deltas
 
 
 @bp.route("/leaderboard")
@@ -20,7 +38,8 @@ def leaderboard():
         " ORDER BY doubles_rating DESC, doubles_wins DESC LIMIT 50"
     ).fetchall()
     return render_template(
-        "players/leaderboard.html", singles=singles, doubles=doubles
+        "players/leaderboard.html", singles=singles, doubles=doubles,
+        deltas=today_deltas(db),
     )
 
 

@@ -34,6 +34,8 @@ def index():
 
 @bp.route("/<int:group_id>")
 def detail(group_id):
+    from .players import today_deltas
+
     db = get_db()
     group = get_group(group_id)
     members = db.execute(
@@ -41,9 +43,19 @@ def detail(group_id):
         " WHERE gp.group_id = ? ORDER BY p.name",
         (group_id,),
     ).fetchall()
+    singles_board = sorted(
+        members, key=lambda p: (p["singles_rating"], p["singles_wins"]),
+        reverse=True,
+    )
+    doubles_board = sorted(
+        members, key=lambda p: (p["doubles_rating"], p["doubles_wins"]),
+        reverse=True,
+    )
     matches = fetch_matches(db, group_id=group_id, limit=25)
     return render_template(
-        "groups/detail.html", group=group, members=members, matches=matches,
+        "groups/detail.html", group=group, members=members,
+        singles_board=singles_board, doubles_board=doubles_board,
+        deltas=today_deltas(db), matches=matches,
         unlocked=is_unlocked(group_id),
     )
 

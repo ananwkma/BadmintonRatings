@@ -1,0 +1,30 @@
+{% macro board(entries, kind, deltas) %}
+<div class="card board">
+  <h2>{{ kind|capitalize }}</h2>
+  {% if entries %}
+  <table>
+    <thead><tr><th>#</th><th>Player</th><th>Rating</th><th>Today</th><th>W–L</th></tr></thead>
+    <tbody>
+      {% for p in entries %}
+      <tr class="{{ 'top-rank' if loop.index <= 3 }}">
+        <td class="rank">{{ ['🥇', '🥈', '🥉'][loop.index0] if loop.index <= 3 else loop.index }}</td>
+        <td><a href="{{ url_for('players.profile', player_id=p['id']) }}">{{ p['name'] }}</a></td>
+        <td class="rating">{{ p[kind ~ '_rating']|round|int }}</td>
+        <td>
+          {% set day = deltas.get(p['id'], {}).get(kind) %}
+          {% if day %}
+          <span class="delta day-delta {{ 'pos' if day >= 0 else 'neg' }}">{{ '%+d'|format(day|round|int) }}</span>
+          {% else %}
+          <span class="muted">—</span>
+          {% endif %}
+        </td>
+        <td>{{ p[kind ~ '_wins'] }}–{{ p[kind ~ '_losses'] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No {{ kind }} games recorded yet.</p>
+  {% endif %}
+</div>
+{% endmacro %}

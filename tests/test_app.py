@@ -144,6 +144,22 @@ def test_homepage_group_switcher(app, client, admin, club):
     assert b"Group password" in resp.data  # second group is locked
 
 
+def test_group_page_is_leaderboard_with_daily_change(app, client, club):
+    unlock(client)
+    record_singles(client, app, "Alice", "Bob")  # 21-15 today: exactly ±16
+    html = client.get("/groups/1").data.decode()
+    singles_board = html.split("Doubles</h2>")[0]
+    assert singles_board.index("Alice") < singles_board.index("Bob")
+    assert "+16" in html and "-16" in html
+
+
+def test_leaderboard_shows_daily_change(app, client, club):
+    unlock(client)
+    record_singles(client, app, "Alice", "Bob")
+    html = client.get("/leaderboard").data.decode()
+    assert "+16" in html and "-16" in html
+
+
 def test_leaderboard_split_and_ordered(app, client, club):
     unlock(client)
     record_singles(client, app, "Alice", "Bob")
