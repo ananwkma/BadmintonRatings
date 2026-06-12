@@ -61,11 +61,19 @@ nav {
 .brand {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.12rem;
-  letter-spacing: -0.02em;
+  font-size: 1.3rem;
+  letter-spacing: -0.045em;
   text-decoration: none;
   color: #fff;
   white-space: nowrap;
+  transition: text-shadow 0.2s;
+}
+.brand:hover { text-shadow: 0 0 18px rgba(46, 227, 110, 0.35); }
+.brand-me {
+  background: linear-gradient(120deg, #5cee8e, #1db95a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .nav-links { display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap; }

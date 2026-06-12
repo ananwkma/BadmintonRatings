@@ -4,6 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{% endblock %} · RateMe</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/favicon-32.png') }}">
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <meta name="apple-mobile-web-app-title" content="RateMe">
+  <meta name="mobile-web-app-capable" content="yes">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -21,7 +27,7 @@
 <body>
 <nav>
   <div class="nav-inner">
-    <a class="brand" href="{{ url_for('index') }}">RateMe</a>
+    <a class="brand" href="{{ url_for('index') }}">Rate<span class="brand-me">Me</span></a>
     <div class="nav-links">
       {% if current_group or is_admin() %}
         <a class="nav-cta" href="{{ url_for('matches.record_shortcut') }}">Record</a>

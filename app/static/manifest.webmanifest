@@ -1,0 +1,13 @@
+{
+  "name": "RateMe",
+  "short_name": "RateMe",
+  "description": "Elo-rated badminton singles & doubles for your group",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0d0c",
+  "theme_color": "#0b0d0c",
+  "icons": [
+    { "src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
