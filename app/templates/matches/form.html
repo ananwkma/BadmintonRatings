@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
 {% from '_match_form.html' import match_form %}
 
-{% block title %}{{ 'Edit match' if match else 'Record match' }}{% endblock %}
-{% block header %}{{ 'Edit match' if match else 'Record a match' }} <span class="muted">· {{ group['name'] }}</span>{% endblock %}
+{% block title %}{{ 'Edit game' if match else 'Record game' }}{% endblock %}
+{% block header %}{{ 'Edit game' if match else 'Record a game' }} <span class="muted">· {{ group['name'] }}</span>{% endblock %}
 
 {% block content %}
 {% if members|length < 2 %}
@@ -16,6 +16,6 @@
   {% endif %}
 </div>
 {% else %}
-{{ match_form(group, members, match, today) }}
+{{ match_form(group, members, match) }}
 {% endif %}
 {% endblock %}

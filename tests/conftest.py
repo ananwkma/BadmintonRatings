@@ -93,25 +93,22 @@ def unlock(client, group_id=1, password=GROUP_PW):
     return client.post(f"/groups/{group_id}/unlock", data={"password": password})
 
 
-def record_singles(client, app, winner, loser, games=None, played_at="2026-01-01",
-                   group_id=1):
+def record_singles(client, app, winner, loser, score=(21, 15), group_id=1):
+    """Record one game: the named winner is side A with the higher score."""
     data = {
-        "match_type": "singles", "played_at": played_at,
+        "match_type": "singles", "winner": "A",
         "side_a_1": player_id(app, winner), "side_b_1": player_id(app, loser),
+        "score_a": str(score[0]), "score_b": str(score[1]),
     }
-    for i, (a, b) in enumerate(games or [(21, 15)], start=1):
-        data[f"game{i}_a"] = str(a)
-        data[f"game{i}_b"] = str(b)
     return client.post(f"/groups/{group_id}/matches/new", data=data)
 
 
-def record_doubles(client, app, team_a, team_b, winner_side="A",
-                   played_at="2026-01-01", group_id=1):
-    games = (21, 15) if winner_side == "A" else (15, 21)
+def record_doubles(client, app, team_a, team_b, winner_side="A", group_id=1):
+    score = (21, 15) if winner_side == "A" else (15, 21)
     data = {
-        "match_type": "doubles", "played_at": played_at,
+        "match_type": "doubles", "winner": winner_side,
         "side_a_1": player_id(app, team_a[0]), "side_a_2": player_id(app, team_a[1]),
         "side_b_1": player_id(app, team_b[0]), "side_b_2": player_id(app, team_b[1]),
-        "game1_a": str(games[0]), "game1_b": str(games[1]),
+        "score_a": str(score[0]), "score_b": str(score[1]),
     }
     return client.post(f"/groups/{group_id}/matches/new", data=data)

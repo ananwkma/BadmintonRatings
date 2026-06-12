@@ -129,7 +129,8 @@ def test_homepage_prompts_unlock_when_locked(client, club):
 def test_homepage_shows_record_form_when_unlocked(client, club):
     unlock(client)
     resp = client.get("/")
-    assert b"Record a match" in resp.data
+    assert b"Record a game" in resp.data
+    assert b"Who won the game?" in resp.data
     assert b"select player" in resp.data
     assert b"Alice" in resp.data
 
@@ -176,16 +177,24 @@ def test_partner_analysis(app, client, club):
 
 def test_invalid_scores_rejected(app, client, club):
     unlock(client)
-    base = {"match_type": "singles", "played_at": "2026-01-01",
+    base = {"match_type": "singles", "winner": "A",
             "side_a_1": club["Alice"], "side_b_1": club["Bob"]}
-    resp = client.post("/groups/1/matches/new",
-                       data=dict(base, game1_a="21", game1_b="21"))
-    assert b"cannot be drawn" in resp.data
+    # no winner picked
+    resp = client.post("/groups/1/matches/new", data=dict(
+        base, winner="", score_a="21", score_b="15"))
+    assert b"Pick which side won" in resp.data
+    # missing scores
     resp = client.post("/groups/1/matches/new", data=base)
-    assert b"at least one game" in resp.data
+    assert b"Both scores are required" in resp.data
+    # drawn score can't have a winner
     resp = client.post("/groups/1/matches/new", data=dict(
-        base, game1_a="21", game1_b="10", game2_a="10", game2_b="21"))
-    assert b"must have a winner" in resp.data
+        base, score_a="21", score_b="21"))
+    assert b"score must be higher" in resp.data
+    # out of range
     resp = client.post("/groups/1/matches/new", data=dict(
-        base, side_b_1=club["Alice"], game1_a="21", game1_b="10"))
+        base, score_a="31", score_b="15"))
+    assert b"between 0 and 30" in resp.data
+    # duplicate player
+    resp = client.post("/groups/1/matches/new", data=dict(
+        base, side_b_1=club["Alice"], score_a="21", score_b="10"))
     assert b"can only appear once" in resp.data

@@ -2,7 +2,7 @@
 {% from '_match_row.html' import match_row %}
 {% from '_match_form.html' import match_form %}
 
-{% block title %}Record a match{% endblock %}
+{% block title %}Record a game{% endblock %}
 
 {% block content %}
 {% if not groups %}
@@ -31,7 +31,7 @@
 
 {% if active_group %}
   {% if unlocked %}
-    <h1 class="page-title">Record a match <span class="muted">· {{ active_group['name'] }}</span></h1>
+    <h1 class="page-title">Record a game <span class="muted">· {{ active_group['name'] }}</span></h1>
     {% if members|length < 2 %}
     <div class="card">
       <p>{{ active_group['name'] }} doesn't have enough members to record a match yet.</p>
@@ -42,7 +42,7 @@
       {% endif %}
     </div>
     {% else %}
-    {{ match_form(active_group, members, none, today,
+    {{ match_form(active_group, members, none,
                   action=url_for('matches.create', group_id=active_group['id'])) }}
     {% endif %}
   {% else %}

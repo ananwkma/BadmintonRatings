@@ -74,29 +74,24 @@ def get_match(match_id):
     return matches[0]
 
 
-def parse_games(form):
-    games = []
-    for i in (1, 2, 3):
-        a = form.get(f"game{i}_a", "").strip()
-        b = form.get(f"game{i}_b", "").strip()
-        if not a and not b:
-            continue
-        try:
-            a, b = int(a), int(b)
-        except ValueError:
-            raise ValueError(f"Game {i}: both scores are required as numbers.")
-        if not (0 <= a <= 30 and 0 <= b <= 30):
-            raise ValueError(f"Game {i}: scores must be between 0 and 30.")
-        if a == b:
-            raise ValueError(f"Game {i}: a game cannot be drawn.")
-        games.append([a, b])
-    if not games:
-        raise ValueError("Enter the score for at least one game.")
-    wins_a = sum(1 for a, b in games if a > b)
-    wins_b = len(games) - wins_a
-    if wins_a == wins_b:
-        raise ValueError("The match must have a winner (one side wins more games).")
-    return games, ("A" if wins_a > wins_b else "B")
+def parse_game(form):
+    """One game per record: the winning side is declared explicitly and
+    the scores just have to back it up (win by 2 means scores can pass 21,
+    capped at 30)."""
+    winner = form.get("winner")
+    if winner not in ("A", "B"):
+        raise ValueError("Pick which side won the game.")
+    try:
+        a = int(form.get("score_a", ""))
+        b = int(form.get("score_b", ""))
+    except ValueError:
+        raise ValueError("Both scores are required.")
+    if not (0 <= a <= 30 and 0 <= b <= 30):
+        raise ValueError("Scores must be between 0 and 30.")
+    win_score, lose_score = (a, b) if winner == "A" else (b, a)
+    if win_score <= lose_score:
+        raise ValueError("The winner's score must be higher than the loser's.")
+    return [[a, b]], winner
 
 
 def resolve_players(form, match_type, db, group_id):
@@ -163,7 +158,6 @@ def index():
         members=group_members(db, active["id"]) if active else [],
         unlocked=is_unlocked(active["id"]) if active else False,
         matches=fetch_matches(db, limit=15),
-        today=date.today().isoformat(),
     )
 
 
@@ -177,11 +171,10 @@ def create(group_id):
 
     if request.method == "POST":
         match_type = request.form.get("match_type", "singles")
-        played_at = request.form.get("played_at") or date.today().isoformat()
         try:
             if match_type not in ("singles", "doubles"):
                 raise ValueError("Invalid match type.")
-            games, winner_side = parse_games(request.form)
+            games, winner_side = parse_game(request.form)
             players = resolve_players(request.form, match_type, db, group_id)
         except ValueError as e:
             flash(str(e))
@@ -189,7 +182,8 @@ def create(group_id):
             cur = db.execute(
                 "INSERT INTO matches (group_id, match_type, played_at, scores,"
                 " winner_side) VALUES (?, ?, ?, ?, ?)",
-                (group_id, match_type, played_at, json.dumps(games), winner_side),
+                (group_id, match_type, date.today().isoformat(),
+                 json.dumps(games), winner_side),
             )
             db.executemany(
                 "INSERT INTO match_players (match_id, player_id, side, position)"
@@ -202,7 +196,7 @@ def create(group_id):
 
     return render_template(
         "matches/form.html", match=None, group=group,
-        members=group_members(db, group_id), today=date.today().isoformat(),
+        members=group_members(db, group_id),
     )
 
 
@@ -225,19 +219,18 @@ def edit(match_id):
 
     if request.method == "POST":
         match_type = request.form.get("match_type", match["match_type"])
-        played_at = request.form.get("played_at") or match["played_at"]
         try:
             if match_type not in ("singles", "doubles"):
                 raise ValueError("Invalid match type.")
-            games, winner_side = parse_games(request.form)
+            games, winner_side = parse_game(request.form)
             players = resolve_players(request.form, match_type, db, group_id)
         except ValueError as e:
             flash(str(e))
         else:
             db.execute(
-                "UPDATE matches SET match_type = ?, played_at = ?, scores = ?,"
+                "UPDATE matches SET match_type = ?, scores = ?,"
                 " winner_side = ?, updated_at = datetime('now') WHERE id = ?",
-                (match_type, played_at, json.dumps(games), winner_side, match_id),
+                (match_type, json.dumps(games), winner_side, match_id),
             )
             db.execute("DELETE FROM match_players WHERE match_id = ?", (match_id,))
             db.executemany(
@@ -251,7 +244,7 @@ def edit(match_id):
 
     return render_template(
         "matches/form.html", match=match, group=group,
-        members=group_members(db, group_id), today=date.today().isoformat(),
+        members=group_members(db, group_id),
     )
 
 

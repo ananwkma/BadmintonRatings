@@ -40,7 +40,7 @@
 
   {% if can_edit %}
   <div class="actions">
-    <a class="button" href="{{ url_for('matches.edit', match_id=match['id']) }}">Edit match</a>
+    <a class="button" href="{{ url_for('matches.edit', match_id=match['id']) }}">Edit game</a>
     <form method="post" action="{{ url_for('matches.delete', match_id=match['id']) }}"
           onsubmit="return confirm('Delete this match? Ratings will be recalculated.')">
       <button class="danger" type="submit">Delete</button>

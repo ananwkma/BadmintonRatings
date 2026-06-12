@@ -36,13 +36,17 @@ def test_singles_match_updates_ratings(app, client, club):
     assert alice["doubles_rating"] == START_RATING
 
 
-def test_winner_derived_from_games(app, client, club):
+def test_declared_winner_must_have_higher_score(app, client, club):
     unlock(client)
-    # Bob wins 2 games to 1
-    record_singles(client, app, "Alice", "Bob",
-                   games=[(21, 18), (15, 21), (19, 21)])
-    assert get_player(app, "Bob")["singles_wins"] == 1
-    assert get_player(app, "Alice")["singles_losses"] == 1
+    resp = client.post(
+        "/groups/1/matches/new",
+        data={"match_type": "singles", "winner": "A",
+              "side_a_1": club["Alice"], "side_b_1": club["Bob"],
+              "score_a": "15", "score_b": "21"},
+    )
+    assert b"winner&#39;s score must be higher" in resp.data \
+        or b"winner's score must be higher" in resp.data
+    assert get_player(app, "Alice")["singles_wins"] == 0
 
 
 def test_doubles_equal_ratings_split_evenly(app, client, club):
@@ -78,9 +82,9 @@ def test_edit_recomputes_ratings(app, client, club):
     # flip the result via edit
     resp = client.post(
         "/matches/1/edit",
-        data={"match_type": "singles", "played_at": "2026-01-01",
+        data={"match_type": "singles", "winner": "B",
               "side_a_1": club["Alice"], "side_b_1": club["Bob"],
-              "game1_a": "15", "game1_b": "21"},
+              "score_a": "15", "score_b": "21"},
     )
     assert resp.status_code == 302
     assert get_player(app, "Bob")["singles_rating"] == START_RATING + K_FACTOR / 2
@@ -98,11 +102,18 @@ def test_delete_resets_ratings(app, client, club):
 
 def test_replay_order_follows_played_at(app, client, club):
     unlock(client)
-    # Recorded out of order: the later-played match is entered first.
-    record_singles(client, app, "Alice", "Bob", played_at="2026-02-01")
-    record_singles(client, app, "Bob", "Alice", played_at="2026-01-01")
-    # Replay order: Bob wins first (both 1500, +16), then Alice beats a
-    # higher-rated Bob, gaining more than 16.
+    record_singles(client, app, "Alice", "Bob")
+    record_singles(client, app, "Bob", "Alice")
+    # Backdate the second game (as if history were corrected) and replay:
+    # Bob's win now comes first, then Alice beats a higher-rated Bob and
+    # gains more than she would against an equal.
+    from app import ratings
+    from app.db import get_db
+    with app.app_context():
+        db = get_db()
+        db.execute("UPDATE matches SET played_at = '2025-01-01' WHERE id = 2")
+        ratings.recompute_all(db)
+        db.commit()
     alice, bob = get_player(app, "Alice"), get_player(app, "Bob")
     assert alice["singles_rating"] > bob["singles_rating"]
     assert alice["singles_wins"] == 1 and alice["singles_losses"] == 1
@@ -110,8 +121,8 @@ def test_replay_order_follows_played_at(app, client, club):
 
 def test_blowout_wins_earn_more_points(app, client, club):
     unlock(client)
-    record_singles(client, app, "Alice", "Bob", games=[(21, 19)])  # squeaker
-    record_singles(client, app, "Carol", "Dan", games=[(21, 5)])  # blowout
+    record_singles(client, app, "Alice", "Bob", score=(21, 19))  # squeaker
+    record_singles(client, app, "Carol", "Dan", score=(21, 5))  # blowout
     alice_gain = get_player(app, "Alice")["singles_rating"] - START_RATING
     carol_gain = get_player(app, "Carol")["singles_rating"] - START_RATING
     assert 0 < alice_gain < K_FACTOR / 2 < carol_gain
@@ -121,7 +132,7 @@ def test_upset_wins_earn_more_points(app, client, club):
     unlock(client)
     # Alice climbs to 1516 beating Bob, then 1500-rated Dan upsets her
     # with the same 21-15 scoreline and earns more than the standard 16.
-    record_singles(client, app, "Alice", "Bob", played_at="2026-01-01")
-    record_singles(client, app, "Dan", "Alice", played_at="2026-01-02")
+    record_singles(client, app, "Alice", "Bob")
+    record_singles(client, app, "Dan", "Alice")
     dan_gain = get_player(app, "Dan")["singles_rating"] - START_RATING
     assert dan_gain > K_FACTOR / 2
