@@ -28,6 +28,16 @@ def create_app(test_config=None):
     app.register_blueprint(players.bp)
     app.add_url_rule("/", endpoint="index")
 
+    # iOS and older browsers probe these root paths directly
+    @app.route("/apple-touch-icon.png")
+    @app.route("/apple-touch-icon-precomposed.png")
+    def apple_touch_icon():
+        return app.send_static_file("icons/apple-touch-icon.png")
+
+    @app.route("/favicon.ico")
+    def favicon():
+        return app.send_static_file("icons/favicon-32.png")
+
     app.jinja_env.globals["is_admin"] = auth.is_admin
     app.jinja_env.globals["is_unlocked"] = auth.is_unlocked
 
