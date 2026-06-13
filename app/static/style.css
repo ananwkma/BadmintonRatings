@@ -912,7 +912,9 @@ td a { color: var(--ink); font-weight: 600; }
     gap: 0;
     padding: 0.55rem 0.4rem calc(0.55rem + env(safe-area-inset-bottom));
   }
-  /* notch: the bar's grey line curves around the raised record button */
+  /* notch: a thin grey ring concentric with the raised record button.
+     ::before is the ring (page-bg fill), ::after repaints the lower
+     interior in bar colour and hides the straight border line. */
   .nav-links::before {
     content: "";
     position: absolute;
@@ -924,26 +926,32 @@ td a { color: var(--ink); font-weight: 600; }
     border-radius: 50%;
     background: var(--bg);
     border: 1px solid var(--border);
+    z-index: 1;
   }
   .nav-links::after {
     content: "";
     position: absolute;
-    top: 2px;
+    top: 1px;
     left: 50%;
     transform: translateX(-50%);
-    width: 86px;
-    height: 42px;
+    width: 72px;
+    height: 40px;
     background: #0f1210;
+    z-index: 1;
   }
-  .nav-links > a, .nav-links > .inline-form { position: relative; z-index: 1; }
+  .nav-links > a, .nav-links > .inline-form { position: relative; z-index: 2; }
   /* on mobile the record button sits in the center notch */
   .nav-links a[aria-label="Home"] { order: -1; }
-  .nav-record {
-    width: 3.4rem;
-    height: 3.4rem;
-    transform: translateY(-1.45rem);
+  .nav-links > a.nav-record {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translate(-50%, -50%);
+    width: 4.25rem;
+    height: 4.25rem;
+    z-index: 3;
   }
-  .nav-record svg { width: 26px; height: 26px; }
+  .nav-links > a.nav-record svg { width: 30px; height: 30px; }
   .nav-links a, .nav-links .linklike { font-size: 0.78rem; padding: 0.3rem 0.55rem; }
   .nav-links .admin-logout { display: none; }
   .admin-gear { bottom: 4.4rem; left: 0.75rem; width: 2.6rem; height: 2.6rem; }
