@@ -937,3 +937,22 @@ td a { color: var(--ink); font-weight: 600; }
   font-size: 1.35rem;
   vertical-align: middle;
 }
+
+/* icon navbar */
+.nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem !important;
+  color: var(--muted);
+}
+.nav-icon:hover { color: #fff; }
+.nav-record {
+  width: 2.7rem;
+  height: 2.7rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink) !important;
+  box-shadow: 0 0 18px rgba(46, 227, 110, 0.35);
+}
+.nav-record:hover { background: #4dec84; color: var(--accent-ink) !important; }
