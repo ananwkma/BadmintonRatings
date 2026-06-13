@@ -116,5 +116,5 @@
     </div>
   </div>
 </form>
-<script src="{{ url_for('static', filename='app.js') }}"></script>
+<script src="{{ url_for('static', filename='app.js') }}?v={{ asset_version('app.js') }}"></script>
 {% endmacro %}

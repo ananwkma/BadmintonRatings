@@ -951,7 +951,8 @@ td a { color: var(--ink); font-weight: 600; }
     height: 4.25rem;
     z-index: 3;
   }
-  .nav-links > a.nav-record svg { width: 30px; height: 30px; }
+  .nav-links > a.nav-record svg { width: 32px; height: 32px; }
+  .nav-links a.nav-icon:not(.nav-record) svg { width: 34px; height: 34px; }
   .nav-links a, .nav-links .linklike { font-size: 0.78rem; padding: 0.3rem 0.55rem; }
   .nav-links .admin-logout { display: none; }
   .admin-gear { bottom: 4.4rem; left: 0.75rem; width: 2.6rem; height: 2.6rem; }
@@ -986,12 +987,14 @@ td a { color: var(--ink); font-weight: 600; }
   color: var(--muted);
 }
 .nav-icon:hover { color: #fff; }
+.nav-icon svg { width: 30px; height: 30px; }
 .nav-record {
-  width: 2.7rem;
-  height: 2.7rem;
+  width: 3rem;
+  height: 3rem;
   border-radius: 50%;
   background: var(--accent);
   color: var(--accent-ink) !important;
   box-shadow: 0 0 18px rgba(46, 227, 110, 0.35);
 }
+.nav-record svg { width: 26px; height: 26px; }
 .nav-record:hover { background: #4dec84; color: var(--accent-ink) !important; }

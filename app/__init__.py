@@ -41,6 +41,17 @@ def create_app(test_config=None):
     app.jinja_env.globals["is_admin"] = auth.is_admin
     app.jinja_env.globals["is_unlocked"] = auth.is_unlocked
 
+    # cache-buster so deployed CSS/JS changes load without a hard refresh
+    static_dir = os.path.join(app.root_path, "static")
+
+    def asset_version(filename):
+        try:
+            return int(os.path.getmtime(os.path.join(static_dir, filename)))
+        except OSError:
+            return 0
+
+    app.jinja_env.globals["asset_version"] = asset_version
+
     @app.context_processor
     def inject_current_group():
         from flask import session
