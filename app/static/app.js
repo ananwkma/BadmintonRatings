@@ -91,21 +91,6 @@
       clearTimeout(entry.timer);
       entry.timer = setTimeout(function () { resolveConflict(entry); }, 150);
     });
-    /* tapping a name that isn't centered selects it instead of
-       declaring the winner; names taken by another wheel are inert */
-    wheel.addEventListener("click", function (event) {
-      const num = event.target.closest(".num");
-      if (!num) return;
-      if (num.classList.contains("taken")) {
-        event.stopPropagation();
-        return;
-      }
-      if (!num.classList.contains("sel")) {
-        event.stopPropagation();
-        const idx = Array.from(wheel.querySelectorAll(".num")).indexOf(num);
-        wheel.scrollTo({ top: idx * entry.item, behavior: "smooth" });
-      }
-    });
     nameWheels.push(entry);
   });
 
