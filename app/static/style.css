@@ -904,15 +904,46 @@ td a { color: var(--ink); font-weight: 600; }
     left: 0;
     right: 0;
     z-index: 20;
-    background: rgba(15, 18, 16, 0.92);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    background: #0f1210;
     border-top: 1px solid var(--border);
     display: flex;
     justify-content: space-around;
+    align-items: center;
     gap: 0;
     padding: 0.55rem 0.4rem calc(0.55rem + env(safe-area-inset-bottom));
   }
+  /* notch: the bar's grey line curves around the raised record button */
+  .nav-links::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 76px;
+    height: 76px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+  }
+  .nav-links::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 86px;
+    height: 42px;
+    background: #0f1210;
+  }
+  .nav-links > a, .nav-links > .inline-form { position: relative; z-index: 1; }
+  /* on mobile the record button sits in the center notch */
+  .nav-links a[aria-label="Home"] { order: -1; }
+  .nav-record {
+    width: 3.4rem;
+    height: 3.4rem;
+    transform: translateY(-1.45rem);
+  }
+  .nav-record svg { width: 26px; height: 26px; }
   .nav-links a, .nav-links .linklike { font-size: 0.78rem; padding: 0.3rem 0.55rem; }
   .nav-links .admin-logout { display: none; }
   .admin-gear { bottom: 4.4rem; left: 0.75rem; width: 2.6rem; height: 2.6rem; }
