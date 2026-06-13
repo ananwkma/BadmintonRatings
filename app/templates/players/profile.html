@@ -53,7 +53,7 @@
     <thead><tr><th>Partner</th><th>Matches</th><th>W–L</th><th>Win %</th><th>Net rating</th></tr></thead>
     <tbody>
       {% for p in partners %}
-      <tr>
+      <tr data-href="{{ url_for('players.profile', player_id=p['partner_id']) }}">
         <td><a href="{{ url_for('players.profile', player_id=p['partner_id']) }}">{{ p['name'] }}</a></td>
         <td>{{ p['matches'] }}</td>
         <td>{{ p['wins'] }}–{{ p['matches'] - p['wins'] }}</td>
