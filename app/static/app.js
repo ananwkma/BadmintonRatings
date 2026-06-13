@@ -261,32 +261,49 @@
     highlight(scoreWheels[side], value);
   }
 
-  function loserLimit() {
-    const winnerVal = parseInt(scoreInputs[currentWinner].value, 10);
-    return Math.max(0, winnerVal >= MAX_SCORE ? MAX_SCORE - 1 : winnerVal - 2);
+  function clampInt(v) {
+    return Math.min(MAX_SCORE, Math.max(0, parseInt(v, 10) || 0));
   }
 
-  /* the loser can never reach the winner's score: win by 2, except a
-     30-29 finish at the cap */
-  function clampLoser(smooth) {
+  let adjusting = false;
+
+  /* deuce auto-fill: a winning score of 22+ sets the loser to that
+     score minus 2, and a losing score of 20+ sets the winner to that
+     score plus 2. Otherwise the loser simply can't reach the winner
+     (win by 2, except a 30-29 finish at the cap). */
+  function applyScoreRules(movedSide) {
     if (!currentWinner) return;
-    const loser = currentWinner === "A" ? "B" : "A";
-    if (parseInt(scoreInputs[loser].value, 10) > loserLimit()) {
-      setScoreWheel(loser, loserLimit(), smooth);
+    const w = currentWinner;
+    const l = w === "A" ? "B" : "A";
+    let wv = clampInt(scoreInputs[w].value);
+    let lv = clampInt(scoreInputs[l].value);
+
+    if (movedSide === w && wv >= 22) {
+      lv = wv - 2;
+    } else if (movedSide === l && lv >= 20) {
+      wv = Math.min(MAX_SCORE, lv + 2);
+    } else {
+      const cap = wv >= MAX_SCORE ? MAX_SCORE - 1 : wv - 2;
+      if (lv > cap) lv = Math.max(0, cap);
     }
+    if (lv >= wv) lv = Math.max(0, wv - 1);
+
+    adjusting = true;
+    if (clampInt(scoreInputs[w].value) !== wv) setScoreWheel(w, wv, true);
+    if (clampInt(scoreInputs[l].value) !== lv) setScoreWheel(l, lv, true);
+    clearTimeout(settleTimers.adjust);
+    settleTimers.adjust = setTimeout(function () { adjusting = false; }, 400);
   }
 
   ["A", "B"].forEach(function (side) {
     scoreWheels[side].addEventListener("scroll", function () {
       if (!scoreItem) return;
-      const value = Math.min(
-        MAX_SCORE,
-        Math.max(0, Math.round(scoreWheels[side].scrollTop / scoreItem))
-      );
+      const value = clampInt(Math.round(scoreWheels[side].scrollTop / scoreItem));
       scoreInputs[side].value = value;
       highlight(scoreWheels[side], value);
+      if (adjusting) return;
       clearTimeout(settleTimers[side]);
-      settleTimers[side] = setTimeout(function () { clampLoser(true); }, 160);
+      settleTimers[side] = setTimeout(function () { applyScoreRules(side); }, 160);
     });
   });
 
@@ -314,7 +331,7 @@
     btn.addEventListener("click", function () {
       const winner = currentWinner || "A";
       setScoreWheel(winner, parseInt(btn.dataset.to, 10), true);
-      setTimeout(function () { clampLoser(true); }, 180);
+      setTimeout(function () { applyScoreRules(winner); }, 200);
     });
   });
 

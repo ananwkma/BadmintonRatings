@@ -76,7 +76,7 @@ nav {
   -webkit-text-fill-color: transparent;
 }
 
-.nav-links { display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap; }
+.nav-links { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; }
 .nav-links a, .nav-links .linklike {
   text-decoration: none;
   color: var(--muted);
@@ -419,7 +419,14 @@ input[type="radio"], input[type="checkbox"] { accent-color: var(--accent); }
   -webkit-tap-highlight-color: transparent;
 }
 @media (hover: hover) {
-  .pick-half:hover { border-color: var(--accent); }
+  .pick-half { cursor: pointer; }
+  .pick-half:hover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+    box-shadow: 0 0 24px rgba(46, 227, 110, 0.18);
+  }
+  .pick-half:hover .half-label { color: var(--accent); }
+  .pick-half:hover .tap-hint { color: var(--accent); }
 }
 .pick-half.win-sel {
   border-color: var(--accent);
@@ -942,6 +949,7 @@ td a { color: var(--ink); font-weight: 600; }
   .nav-links > a, .nav-links > .inline-form { position: relative; z-index: 2; }
   /* on mobile the record button sits in the center notch */
   .nav-links a[aria-label="Home"] { order: -1; }
+  /* mobile: the record button is a green circle docked in the notch */
   .nav-links > a.nav-record {
     position: absolute;
     left: 50%;
@@ -950,6 +958,10 @@ td a { color: var(--ink); font-weight: 600; }
     width: 4.25rem;
     height: 4.25rem;
     z-index: 3;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--accent-ink) !important;
+    box-shadow: 0 0 18px rgba(46, 227, 110, 0.35);
   }
   .nav-links > a.nav-record svg { width: 32px; height: 32px; }
   .nav-links a.nav-icon:not(.nav-record) svg { width: 34px; height: 34px; }
@@ -988,13 +1000,7 @@ td a { color: var(--ink); font-weight: 600; }
 }
 .nav-icon:hover { color: #fff; }
 .nav-icon svg { width: 30px; height: 30px; }
-.nav-record {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--accent-ink) !important;
-  box-shadow: 0 0 18px rgba(46, 227, 110, 0.35);
-}
-.nav-record svg { width: 26px; height: 26px; }
-.nav-record:hover { background: #4dec84; color: var(--accent-ink) !important; }
+/* desktop: the record button is just a green plus glyph */
+.nav-record { color: var(--accent) !important; }
+.nav-record svg { width: 32px; height: 32px; }
+.nav-record:hover { color: #4dec84 !important; }
