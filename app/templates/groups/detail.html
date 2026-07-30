@@ -23,7 +23,7 @@
 <p class="empty">No members yet — the admin can add players to this group.</p>
 {% endif %}
 
-<h2>Recent games</h2>
+<h2>Recent games <span class="muted">· this season</span></h2>
 {% if matches %}
 <div class="match-list">
   {% for match in matches %}{{ match_row(match, show_group=False) }}{% endfor %}

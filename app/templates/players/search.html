@@ -13,14 +13,16 @@
 {% if results %}
 <div class="card">
   <table>
-    <thead><tr><th>Player</th><th>Singles</th><th>Doubles</th></tr></thead>
+    <thead><tr><th>Player</th>{% if show_ratings %}<th>Singles</th><th>Doubles</th>{% endif %}</tr></thead>
     <tbody>
       {% for p in results %}
       <tr class="player-row" data-name="{{ p['name']|lower }}"
           data-href="{{ url_for('players.profile', player_id=p['id']) }}">
         <td><a href="{{ url_for('players.profile', player_id=p['id']) }}">{{ p['name'] }}</a></td>
+        {% if show_ratings %}
         <td>{{ p['singles_rating']|round|int }} <span class="muted">({{ p['singles_wins'] }}–{{ p['singles_losses'] }})</span></td>
         <td>{{ p['doubles_rating']|round|int }} <span class="muted">({{ p['doubles_wins'] }}–{{ p['doubles_losses'] }})</span></td>
+        {% endif %}
       </tr>
       {% endfor %}
     </tbody>

@@ -6,25 +6,32 @@ CREATE TABLE settings (
 CREATE TABLE players (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL UNIQUE COLLATE NOCASE,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  singles_rating REAL NOT NULL DEFAULT 1500,
-  doubles_rating REAL NOT NULL DEFAULT 1500,
-  singles_wins INTEGER NOT NULL DEFAULT 0,
-  singles_losses INTEGER NOT NULL DEFAULT 0,
-  doubles_wins INTEGER NOT NULL DEFAULT 0,
-  doubles_losses INTEGER NOT NULL DEFAULT 0
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE groups (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL UNIQUE COLLATE NOCASE,
   password_hash TEXT NOT NULL,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  last_season TEXT
 );
 
 CREATE TABLE group_players (
   group_id INTEGER NOT NULL REFERENCES groups (id) ON DELETE CASCADE,
   player_id INTEGER NOT NULL REFERENCES players (id) ON DELETE CASCADE,
+  singles_rating REAL NOT NULL DEFAULT 1500,
+  doubles_rating REAL NOT NULL DEFAULT 1500,
+  singles_wins INTEGER NOT NULL DEFAULT 0,
+  singles_losses INTEGER NOT NULL DEFAULT 0,
+  doubles_wins INTEGER NOT NULL DEFAULT 0,
+  doubles_losses INTEGER NOT NULL DEFAULT 0,
+  career_singles_wins INTEGER NOT NULL DEFAULT 0,
+  career_singles_losses INTEGER NOT NULL DEFAULT 0,
+  career_doubles_wins INTEGER NOT NULL DEFAULT 0,
+  career_doubles_losses INTEGER NOT NULL DEFAULT 0,
+  career_singles_peak REAL NOT NULL DEFAULT 1500,
+  career_doubles_peak REAL NOT NULL DEFAULT 1500,
   PRIMARY KEY (group_id, player_id)
 );
 

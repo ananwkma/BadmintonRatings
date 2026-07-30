@@ -1,5 +1,6 @@
 from flask import Blueprint, abort, render_template, request
 
+from . import ratings
 from .auth import active_group_id, group_required
 from .db import get_db
 from .matches import fetch_matches
@@ -10,15 +11,16 @@ bp = Blueprint("players", __name__)
 MIN_PARTNER_MATCHES = 2  # matches together before a pairing is ranked "best"
 
 
-def today_deltas(db):
-    """Net rating change per player for games played today, split by
-    discipline: {player_id: {'singles': +16.0, 'doubles': -12.3}}."""
+def today_deltas(db, group_id):
+    """Net rating change per player for games played today in this group,
+    split by discipline: {player_id: {'singles': +16.0, 'doubles': -12.3}}."""
     rows = db.execute(
         "SELECT rc.player_id, m.match_type,"
         " SUM(rc.rating_after - rc.rating_before) AS delta"
         " FROM rating_changes rc JOIN matches m ON m.id = rc.match_id"
-        " WHERE m.played_at = ? GROUP BY rc.player_id, m.match_type",
-        (local_today(),),
+        " WHERE m.group_id = ? AND m.played_at = ?"
+        " GROUP BY rc.player_id, m.match_type",
+        (group_id, local_today()),
     ).fetchall()
     deltas = {}
     for row in rows:
@@ -34,8 +36,12 @@ def search():
     db = get_db()
     query = request.args.get("q", "").strip()
     group_id = active_group_id()
+    select = "p.id, p.name"
     where, params = "", []
     if group_id is not None:
+        select += (", gp.singles_rating, gp.doubles_rating,"
+                   " gp.singles_wins, gp.singles_losses,"
+                   " gp.doubles_wins, gp.doubles_losses")
         where = "JOIN group_players gp ON gp.player_id = p.id AND gp.group_id = ?"
         params.append(group_id)
     name_filter = ""
@@ -43,24 +49,28 @@ def search():
         name_filter = "WHERE p.name LIKE ?"
         params.append(f"%{query}%")
     results = db.execute(
-        f"SELECT p.* FROM players p {where} {name_filter} ORDER BY p.name",
+        f"SELECT {select} FROM players p {where} {name_filter} ORDER BY p.name",
         params,
     ).fetchall()
-    return render_template("players/search.html", query=query, results=results)
+    return render_template(
+        "players/search.html", query=query, results=results,
+        show_ratings=group_id is not None,
+    )
 
 
-def compute_ranks(db, players_rows):
+def compute_ranks(db, players_rows, group_id):
     """Ranks within the given set of players for each discipline, with the
     movement since yesterday's standings (positive = climbed). Yesterday's
-    ratings are reconstructed from the per-game rating history.
+    ratings are reconstructed from the per-game rating history, scoped to
+    this group so other groups' games don't affect the comparison.
 
     Returns {player_id: {kind: {"rank": int, "change": int}}}.
     """
     history = db.execute(
         "SELECT rc.player_id, m.match_type, rc.rating_after"
         " FROM rating_changes rc JOIN matches m ON m.id = rc.match_id"
-        " WHERE m.played_at < ? ORDER BY m.played_at, m.id",
-        (local_today(),),
+        " WHERE m.group_id = ? AND m.played_at < ? ORDER BY m.played_at, m.id",
+        (group_id, local_today()),
     ).fetchall()
     past = {}
     for row in history:  # last row per (player, kind) wins
@@ -85,9 +95,10 @@ def compute_ranks(db, players_rows):
     return result
 
 
-def partner_stats(db, player_id):
-    """Aggregate doubles results by partner: matches, wins, win % and the
-    net doubles-rating change earned while playing together."""
+def partner_stats(db, player_id, group_id):
+    """Aggregate this season's doubles results (in this group) by partner:
+    matches, wins, win % and the net doubles-rating change earned playing
+    together. Scoped to the season since it's a match-history derivative."""
     rows = db.execute(
         "SELECT m.id, m.winner_side, mine.side,"
         "       p.id AS partner_id, p.name,"
@@ -98,9 +109,9 @@ def partner_stats(db, player_id):
         "      AND partner.side = mine.side AND partner.player_id != ?"
         " JOIN players p ON p.id = partner.player_id"
         " LEFT JOIN rating_changes rc ON rc.match_id = m.id AND rc.player_id = ?"
-        " WHERE m.match_type = 'doubles'"
+        " WHERE m.match_type = 'doubles' AND m.group_id = ? AND m.played_at >= ?"
         " ORDER BY m.played_at, m.id",
-        (player_id, player_id, player_id),
+        (player_id, player_id, player_id, group_id, ratings.current_season() + "-01"),
     ).fetchall()
 
     stats = {}
@@ -139,34 +150,41 @@ def profile(player_id):
     if player is None:
         abort(404, "Player not found.")
 
-    groups = db.execute(
-        "SELECT g.id, g.name FROM groups g"
-        " JOIN group_players gp ON gp.group_id = g.id"
+    # ratings are per group, so each membership carries its own rating/W-L,
+    # plus lifetime totals and peak rating that never reset each season
+    memberships = db.execute(
+        "SELECT g.id, g.name, gp.singles_rating, gp.doubles_rating,"
+        " gp.singles_wins, gp.singles_losses, gp.doubles_wins, gp.doubles_losses,"
+        " gp.career_singles_wins, gp.career_singles_losses,"
+        " gp.career_doubles_wins, gp.career_doubles_losses,"
+        " gp.career_singles_peak, gp.career_doubles_peak"
+        " FROM groups g JOIN group_players gp ON gp.group_id = g.id"
         " WHERE gp.player_id = ? ORDER BY g.name",
         (player_id,),
     ).fetchall()
 
-    # rank within the viewer's group when the player is a member of it,
-    # otherwise across all players
-    population = None
-    rank_scope = "overall"
+    # stat cards, rank and partner analysis only make sense within a single
+    # group's rating pool; only show them when the viewer's active group is
+    # one the player belongs to
     group_id = active_group_id()
-    if group_id is not None and any(g["id"] == group_id for g in groups):
+    active = next((g for g in memberships if g["id"] == group_id), None)
+
+    ranks, today, partners, best_partner = {}, {}, [], None
+    if active is not None:
         population = db.execute(
-            "SELECT p.* FROM players p"
-            " JOIN group_players gp ON gp.player_id = p.id"
+            "SELECT p.id, p.name, gp.singles_rating, gp.doubles_rating,"
+            " gp.singles_wins, gp.singles_losses, gp.doubles_wins, gp.doubles_losses"
+            " FROM players p JOIN group_players gp ON gp.player_id = p.id"
             " WHERE gp.group_id = ?",
             (group_id,),
         ).fetchall()
-        rank_scope = next(g["name"] for g in groups if g["id"] == group_id)
-    if population is None:
-        population = db.execute("SELECT * FROM players").fetchall()
-    ranks = compute_ranks(db, population).get(player_id, {})
+        ranks = compute_ranks(db, population, group_id).get(player_id, {})
+        today = today_deltas(db, group_id).get(player_id, {})
+        partners, best_partner = partner_stats(db, player_id, group_id)
 
-    matches = fetch_matches(db, player_id=player_id)
-    partners, best_partner = partner_stats(db, player_id)
+    matches = fetch_matches(db, player_id=player_id, season_only=True)
     return render_template(
-        "players/profile.html", player=player, groups=groups, matches=matches,
-        partners=partners, best_partner=best_partner, ranks=ranks,
-        rank_scope=rank_scope, today=today_deltas(db).get(player_id, {}),
+        "players/profile.html", player=player, memberships=memberships,
+        active=active, matches=matches, partners=partners,
+        best_partner=best_partner, ranks=ranks, today=today,
     )

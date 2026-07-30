@@ -5,17 +5,18 @@
 {% block header %}{{ player['name'] }}{% endblock %}
 
 {% block content %}
-{% if groups %}
+{% if memberships %}
 <p class="muted">Groups:
-  {% for grp in groups %}<a href="{{ url_for('groups.detail', group_id=grp['id']) }}">{{ grp['name'] }}</a>{{ ', ' if not loop.last }}{% endfor %}
+  {% for grp in memberships %}<a href="{{ url_for('groups.detail', group_id=grp['id']) }}">{{ grp['name'] }}</a>{{ ', ' if not loop.last }}{% endfor %}
 </p>
 {% endif %}
 
+{% if active %}
 <div class="stat-cards">
   {% for kind in ('singles', 'doubles') %}
   <div class="card stat">
     <h3>{{ kind|capitalize }}</h3>
-    <p class="rating">{{ player[kind ~ '_rating']|round|int }}
+    <p class="rating">{{ active[kind ~ '_rating']|round|int }}
       {% set day = today.get(kind) %}
       {% if day %}
       <span class="delta day-delta {{ 'pos' if day >= 0 else 'neg' }}">{{ '%+d'|format(day|round|int) }}</span>
@@ -27,11 +28,11 @@
       {% if rk['change'] %}
       <span class="rank-move {{ 'pos' if rk['change'] > 0 else 'neg' }}">{{ '▲' if rk['change'] > 0 else '▼' }}{{ rk['change']|abs }}</span>
       {% endif %}
-      <span class="muted">{{ 'in ' ~ rank_scope if rank_scope != 'overall' else 'overall' }}</span>
+      <span class="muted">in {{ active['name'] }}</span>
     </p>
     {% endif %}
-    {% set wins = player[kind ~ '_wins'] %}
-    {% set losses = player[kind ~ '_losses'] %}
+    {% set wins = active[kind ~ '_wins'] %}
+    {% set losses = active[kind ~ '_losses'] %}
     <p class="muted">{{ wins }} W – {{ losses }} L{% if wins + losses > 0 %}
       · {{ (100 * wins / (wins + losses))|round|int }}%{% endif %}</p>
   </div>
@@ -45,6 +46,37 @@
   </div>
   {% endif %}
 </div>
+
+<h2>Career <span class="muted">· in {{ active['name'] }}, all seasons</span></h2>
+<div class="stat-cards">
+  {% for kind in ('singles', 'doubles') %}
+  <div class="card stat">
+    <h3>{{ kind|capitalize }}</h3>
+    <p class="rating">Peak {{ active['career_' ~ kind ~ '_peak']|round|int }}</p>
+    {% set cwins = active['career_' ~ kind ~ '_wins'] %}
+    {% set closses = active['career_' ~ kind ~ '_losses'] %}
+    <p class="muted">{{ cwins }} W – {{ closses }} L{% if cwins + closses > 0 %}
+      · {{ (100 * cwins / (cwins + closses))|round|int }}%{% endif %}</p>
+  </div>
+  {% endfor %}
+</div>
+{% elif memberships %}
+<div class="card">
+  <table>
+    <thead><tr><th>Group</th><th>Singles</th><th>Doubles</th></tr></thead>
+    <tbody>
+      {% for grp in memberships %}
+      <tr>
+        <td><a href="{{ url_for('groups.detail', group_id=grp['id']) }}">{{ grp['name'] }}</a></td>
+        <td>{{ grp['singles_rating']|round|int }} <span class="muted">({{ grp['singles_wins'] }}–{{ grp['singles_losses'] }})</span></td>
+        <td>{{ grp['doubles_rating']|round|int }} <span class="muted">({{ grp['doubles_wins'] }}–{{ grp['doubles_losses'] }})</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted">Ratings are separate per group. Unlock a group above to see rank, today's change and partner analysis.</p>
+</div>
+{% endif %}
 
 {% if partners %}
 <h2>Partner analysis (doubles)</h2>
@@ -68,7 +100,7 @@
 {% endif %}
 
 <div class="page-row">
-  <h2>Match history</h2>
+  <h2>Match history <span class="muted">· this season</span></h2>
   {% if matches %}
   <div class="filter-chips" id="history-filter">
     <button type="button" class="chip-btn active" data-filter="all">All</button>

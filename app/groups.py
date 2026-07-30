@@ -3,6 +3,7 @@ from flask import (
 )
 from werkzeug.security import check_password_hash
 
+from . import ratings
 from .auth import enter_group, is_admin, is_unlocked, leave_group
 from .db import get_db
 from .matches import fetch_matches
@@ -51,8 +52,16 @@ def detail(group_id):
         return redirect(url_for("groups.index"))
 
     db = get_db()
+    # catch up the seasonal soft reset even if nobody's recorded a match
+    # since an earlier season -- cheap no-op once this season's caught up
+    if group["last_season"] != ratings.current_season():
+        ratings.recompute_group(db, group_id)
+        db.commit()
+
     members = db.execute(
-        "SELECT p.* FROM players p JOIN group_players gp ON gp.player_id = p.id"
+        "SELECT p.id, p.name, gp.singles_rating, gp.doubles_rating,"
+        " gp.singles_wins, gp.singles_losses, gp.doubles_wins, gp.doubles_losses"
+        " FROM players p JOIN group_players gp ON gp.player_id = p.id"
         " WHERE gp.group_id = ? ORDER BY p.name",
         (group_id,),
     ).fetchall()
@@ -64,11 +73,11 @@ def detail(group_id):
         members, key=lambda p: (p["doubles_rating"], p["doubles_wins"]),
         reverse=True,
     )
-    matches = fetch_matches(db, group_id=group_id, limit=25)
+    matches = fetch_matches(db, group_id=group_id, limit=25, season_only=True)
     return render_template(
         "groups/detail.html", group=group, members=members,
         singles_board=singles_board, doubles_board=doubles_board,
-        deltas=today_deltas(db), ranks=compute_ranks(db, members),
+        deltas=today_deltas(db, group_id), ranks=compute_ranks(db, members, group_id),
         matches=matches,
     )
 

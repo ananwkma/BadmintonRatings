@@ -13,22 +13,31 @@ from .util import local_today
 bp = Blueprint("matches", __name__)
 
 
-def fetch_matches(db, player_id=None, group_id=None, limit=None):
+def fetch_matches(db, player_id=None, group_id=None, limit=None, season_only=False):
     """Return matches (newest first) as dicts with players grouped by side,
-    the group name, and per-player rating deltas attached."""
+    the group name, and per-player rating deltas attached.
+
+    season_only restricts to the current season (match history "hard
+    resets" each month); leave it off for by-id lookups like get_match(),
+    which must still find matches from earlier seasons."""
     sql = (
         "SELECT m.*, g.name AS group_name FROM matches m"
         " JOIN groups g ON g.id = m.group_id"
         " {join} {where} ORDER BY m.played_at DESC, m.id DESC {limit}"
     )
     params = []
-    join = where = ""
+    join = ""
+    conditions = []
     if player_id is not None:
         join = "JOIN match_players f ON f.match_id = m.id AND f.player_id = ?"
         params.append(player_id)
     if group_id is not None:
-        where = "WHERE m.group_id = ?"
+        conditions.append("m.group_id = ?")
         params.append(group_id)
+    if season_only:
+        conditions.append("m.played_at >= ?")
+        params.append(ratings.current_season() + "-01")
+    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
     sql = sql.format(join=join, where=where, limit="LIMIT ?" if limit else "")
     if limit:
         params.append(limit)
@@ -191,7 +200,7 @@ def create(group_id):
                 " VALUES (?, ?, ?, ?)",
                 [(cur.lastrowid, pid, side, pos) for pid, side, pos in players],
             )
-            ratings.recompute_all(db)
+            ratings.recompute_group(db, group_id)
             db.commit()
             return redirect(url_for("matches.detail", match_id=cur.lastrowid))
 
@@ -242,7 +251,7 @@ def edit(match_id):
                 " VALUES (?, ?, ?, ?)",
                 [(match_id, pid, side, pos) for pid, side, pos in players],
             )
-            ratings.recompute_all(db)
+            ratings.recompute_group(db, group_id)
             db.commit()
             return redirect(url_for("matches.detail", match_id=match_id))
 
@@ -258,7 +267,7 @@ def delete(match_id):
     match = get_match(match_id)
     require_unlocked(match["group_id"])
     db.execute("DELETE FROM matches WHERE id = ?", (match_id,))
-    ratings.recompute_all(db)
+    ratings.recompute_group(db, match["group_id"])
     db.commit()
     flash("Match deleted; ratings have been recalculated.")
     return redirect(url_for("groups.detail", group_id=match["group_id"]))

@@ -75,6 +75,17 @@ def get_player(app, name):
         ).fetchone()
 
 
+def get_rating(app, name, group_id=1):
+    """A player's rating/W-L within a specific group (None if not a member)."""
+    with app.app_context():
+        return get_db().execute(
+            "SELECT gp.* FROM group_players gp"
+            " JOIN players p ON p.id = gp.player_id"
+            " WHERE p.name = ? AND gp.group_id = ?",
+            (name, group_id),
+        ).fetchone()
+
+
 @pytest.fixture
 def club(app, client, admin):
     """Admin-created setup: four players (Alice, Bob, Carol, Dan) all in

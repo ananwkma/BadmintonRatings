@@ -1,5 +1,6 @@
 from conftest import (
-    ADMIN_PW, get_player, player_id, record_doubles, record_singles, unlock,
+    ADMIN_PW, get_player, get_rating, player_id, record_doubles,
+    record_singles, unlock,
 )
 
 
@@ -92,13 +93,13 @@ def test_match_form_explains_empty_group(client, admin):
 def test_admin_deletes_group(app, client, admin, club):
     unlock(client)
     record_singles(client, app, "Alice", "Bob")
-    assert get_player(app, "Alice")["singles_rating"] != 1500
+    assert get_rating(app, "Alice")["singles_rating"] != 1500
     admin.login()
     resp = client.post("/admin/groups/1", data={"action": "delete_group"})
     assert resp.status_code == 302
     assert client.get("/groups/1").status_code == 404
-    # the group's games are gone and ratings replayed without them
-    assert get_player(app, "Alice")["singles_rating"] == 1500
+    # the group's games, memberships and per-group ratings are gone with it
+    assert get_rating(app, "Alice") is None
     assert get_player(app, "Alice") is not None  # players stay on the roster
 
 
@@ -397,3 +398,28 @@ def test_invalid_scores_rejected(app, client, club):
     resp = client.post("/groups/1/matches/new", data=dict(
         base, side_b_1=club["Alice"], score_a="21", score_b="10"))
     assert b"can only appear once" in resp.data
+
+
+def test_match_history_hard_resets_each_season(app, client, club):
+    from app import ratings
+    from app.db import get_db
+
+    unlock(client)
+    record_singles(client, app, "Alice", "Bob")
+    with app.app_context():
+        db = get_db()
+        # push last season's game safely into the past, then replay
+        db.execute("UPDATE matches SET played_at = '2020-01-15' WHERE id = 1")
+        ratings.recompute_group(db, 1)
+        db.commit()
+    record_singles(client, app, "Carol", "Dan")  # this season's own game
+
+    board = client.get("/groups/1").data.decode()
+    recent = board.split("Recent games")[1]
+    assert "Carol" in recent and "Alice" not in recent
+
+    profile = client.get(f"/players/{club['Alice']}").data.decode()
+    assert "No matches yet" in profile
+    # her lifetime record survived the season's hard reset of match history
+    career = profile.split("Career")[1].split("Match history")[0]
+    assert "1 W – 0 L" in career

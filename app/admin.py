@@ -3,7 +3,6 @@ from flask import (
 )
 from werkzeug.security import generate_password_hash
 
-from . import ratings
 from .auth import (
     admin_password_is_set, admin_required, check_admin_password,
     is_admin, set_admin_password,
@@ -210,7 +209,6 @@ def manage_group(group_id):
         elif action == "delete_group":
             db.execute("DELETE FROM matches WHERE group_id = ?", (group_id,))
             db.execute("DELETE FROM groups WHERE id = ?", (group_id,))
-            ratings.recompute_all(db)
             db.commit()
             flash(f"Deleted group {group['name']} and its matches.")
             return redirect(url_for("admin.dashboard"))
